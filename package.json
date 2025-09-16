@@ -1,0 +1,32 @@
+{
+  "name": "mental-health-support-platform",
+  "version": "1.0.0",
+  "description": "Digital Mental Health and Psychological Support System for Students in Higher Education - SIH 2025",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "test": "cd client && npm test && cd ../server && npm test"
+  },
+  "keywords": [
+    "mental-health",
+    "student-support",
+    "mern-stack",
+    "sih-2025",
+    "psychological-support",
+    "education"
+  ],
+  "author": "SIH 2025 Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
