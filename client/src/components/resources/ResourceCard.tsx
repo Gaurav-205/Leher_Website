@@ -1,15 +1,12 @@
-import { motion } from 'framer-motion'
-import { BookOpen, Play, FileText, Image, Download, Heart, Eye, Clock } from 'lucide-react'
+import { BookOpen, Play, FileText, Image, Star } from 'lucide-react'
 import { Resource } from '@services/resourceService'
 
 interface ResourceCardProps {
   resource: Resource
   onView: (resourceId: string) => void
-  onLike: (resourceId: string) => void
-  onDownload: (resourceId: string) => void
 }
 
-const ResourceCard = ({ resource, onView, onLike, onDownload }: ResourceCardProps) => {
+const ResourceCard = ({ resource, onView }: ResourceCardProps) => {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'video':
@@ -60,15 +57,12 @@ const ResourceCard = ({ resource, onView, onLike, onDownload }: ResourceCardProp
   const TypeIcon = getTypeIcon(resource.type)
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      className="bg-white border rounded-lg p-3 hover:shadow-md transition-all duration-200 cursor-pointer"
+    <div
+      className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer group"
       onClick={() => onView(resource._id)}
     >
       {/* Thumbnail */}
-      <div className="aspect-video bg-gray-100 rounded-lg mb-2 flex items-center justify-center relative overflow-hidden">
+      <div className="aspect-video bg-gray-100 flex items-center justify-center relative overflow-hidden">
         {resource.thumbnail ? (
           <img 
             src={resource.thumbnail} 
@@ -76,80 +70,58 @@ const ResourceCard = ({ resource, onView, onLike, onDownload }: ResourceCardProp
             className="w-full h-full object-cover"
           />
         ) : (
-          <TypeIcon className="h-8 w-8 text-gray-400" />
+          <div className="text-center">
+            <TypeIcon className="h-8 w-8 text-gray-400 mx-auto mb-1" />
+            <p className="text-xs text-gray-500 capitalize">{resource.type}</p>
+          </div>
         )}
-        <div className="absolute top-1 right-1">
-          <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${getTypeColor(resource.type)}`}>
+        
+        {/* Featured Badge */}
+        {resource.isFeatured && (
+          <div className="absolute top-2 left-2">
+            <span className="inline-flex items-center px-2 py-1 bg-yellow-500 text-white text-xs font-medium rounded">
+              <Star className="h-3 w-3 mr-1" />
+              Featured
+            </span>
+          </div>
+        )}
+        
+        {/* Type Badge */}
+        <div className="absolute top-2 right-2">
+          <span className={`px-2 py-1 text-xs font-medium rounded ${getTypeColor(resource.type)}`}>
             {resource.type}
           </span>
         </div>
       </div>
 
       {/* Content */}
-      <div className="space-y-2">
+      <div className="p-4 space-y-3">
         {/* Category and Difficulty */}
         <div className="flex items-center justify-between">
-          <span className="bg-primary-100 text-primary-800 text-xs font-medium px-1.5 py-0.5 rounded-full">
+          <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
             {resource.category.name}
           </span>
-          <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${getDifficultyColor(resource.difficulty)}`}>
+          <span className={`text-xs font-medium px-2 py-1 rounded ${getDifficultyColor(resource.difficulty)}`}>
             {resource.difficulty}
           </span>
         </div>
 
         {/* Title */}
-        <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 hover:text-primary-600 transition-colors">
+        <h3 className="text-lg font-medium text-gray-900 line-clamp-2">
           {resource.title}
         </h3>
 
         {/* Description */}
-        <p className="text-xs text-gray-600 line-clamp-2">
+        <p className="text-sm text-gray-600 line-clamp-2">
           {resource.description}
         </p>
 
-        {/* Meta Info */}
-        <div className="flex items-center justify-between text-xs text-gray-600">
-          <div className="flex items-center space-x-2">
-            {resource.duration && (
-              <span className="flex items-center">
-                <Clock className="h-3 w-3 mr-0.5" />
-                {resource.duration}m
-              </span>
-            )}
-            <span className="flex items-center">
-              <Eye className="h-3 w-3 mr-0.5" />
-              {resource.views}
-            </span>
-          </div>
+        {/* Language */}
+        <div className="flex items-center justify-end">
           <span className="text-xs text-gray-500">{resource.language}</span>
         </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-between pt-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onLike(resource._id)
-            }}
-            className="flex items-center text-gray-600 hover:text-red-600 transition-colors"
-          >
-            <Heart className="h-3 w-3 mr-0.5" />
-            <span className="text-xs">{resource.likeCount}</span>
-          </button>
-          
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDownload(resource._id)
-            }}
-            className="flex items-center text-gray-600 hover:text-primary-600 transition-colors"
-          >
-            <Download className="h-3 w-3 mr-0.5" />
-            <span className="text-xs">Download</span>
-          </button>
-        </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 

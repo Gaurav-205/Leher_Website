@@ -1,15 +1,7 @@
-import axios from 'axios'
 import { ApiResponse } from '@types'
+import api from './api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
-
-// Create axios instance
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
@@ -32,7 +24,7 @@ api.interceptors.request.use(
   }
 )
 
-// Types
+// Appointment Types
 export interface Appointment {
   _id: string
   studentId: string
@@ -51,17 +43,24 @@ export interface Appointment {
   feedback?: string
   createdAt: string
   updatedAt: string
+  // Populated fields
   student?: {
     _id: string
     firstName: string
     lastName: string
     email: string
+    profile?: {
+      avatar?: string
+    }
   }
   counselor?: {
     _id: string
     firstName: string
     lastName: string
     email: string
+    profile?: {
+      avatar?: string
+    }
   }
 }
 
@@ -72,6 +71,9 @@ export interface Counselor {
     firstName: string
     lastName: string
     email: string
+    profile?: {
+      avatar?: string
+    }
   }
   specialization: string[]
   experience: number
@@ -83,8 +85,9 @@ export interface Counselor {
   qualifications: string[]
   isAvailable: boolean
   consultationFee?: number
-  maxSessionsPerDay: number
   currentSessionsToday: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Availability {
@@ -94,12 +97,6 @@ export interface Availability {
   isAvailable: boolean
 }
 
-export interface AvailableSlot {
-  time: string
-  duration: number
-  available: boolean
-}
-
 export interface CreateAppointmentData {
   counselorId: string
   date: string
@@ -107,39 +104,29 @@ export interface CreateAppointmentData {
   duration?: number
   type?: 'individual' | 'group' | 'emergency'
   notes?: string
-  studentNotes?: string
+  location?: string
 }
 
 export interface UpdateAppointmentData {
+  date?: string
+  time?: string
+  duration?: number
+  type?: 'individual' | 'group' | 'emergency'
   notes?: string
-  studentNotes?: string
-  counselorNotes?: string
-  meetingLink?: string
   location?: string
   status?: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show'
-}
-
-export interface RateAppointmentData {
-  rating: number
-  feedback?: string
+  meetingLink?: string
 }
 
 export interface GetAppointmentsParams {
-  status?: string
-  type?: string
   page?: number
   limit?: number
-}
-
-export interface GetCounselorsParams {
-  specialization?: string | string[]
-  language?: string | string[]
-  date?: string
-  time?: string
+  status?: string
+  type?: string
 }
 
 export const appointmentService = {
-  // Get user's appointments
+  // Get all appointments for the current user
   getAppointments: async (params?: GetAppointmentsParams): Promise<ApiResponse<{
     appointments: Appointment[]
     pagination: {
@@ -150,111 +137,84 @@ export const appointmentService = {
       hasPrev: boolean
     }
   }>> => {
-    const response = await api.get('/appointments', { params })
-    return response.data
+    try {
+      const response = await api.get('/appointments', { params })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching appointments:', error)
+      throw error
+    }
   },
 
   // Get single appointment
   getAppointment: async (id: string): Promise<ApiResponse<Appointment>> => {
-    const response = await api.get(`/appointments/${id}`)
-    return response.data
+    try {
+      const response = await api.get(`/appointments/${id}`)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching appointment:', error)
+      throw error
+    }
   },
 
   // Create new appointment
   createAppointment: async (data: CreateAppointmentData): Promise<ApiResponse<Appointment>> => {
-    const response = await api.post('/appointments', data)
-    return response.data
+    try {
+      const response = await api.post('/appointments', data)
+      return response.data
+    } catch (error) {
+      console.error('Error creating appointment:', error)
+      throw error
+    }
   },
 
   // Update appointment
   updateAppointment: async (id: string, data: UpdateAppointmentData): Promise<ApiResponse<Appointment>> => {
-    const response = await api.put(`/appointments/${id}`, data)
-    return response.data
+    try {
+      const response = await api.put(`/appointments/${id}`, data)
+      return response.data
+    } catch (error) {
+      console.error('Error updating appointment:', error)
+      throw error
+    }
   },
 
   // Cancel appointment
-  cancelAppointment: async (id: string): Promise<ApiResponse> => {
-    const response = await api.delete(`/appointments/${id}`)
-    return response.data
+  cancelAppointment: async (id: string): Promise<ApiResponse<null>> => {
+    try {
+      const response = await api.delete(`/appointments/${id}`)
+      return response.data
+    } catch (error) {
+      console.error('Error cancelling appointment:', error)
+      throw error
+    }
   },
 
   // Get available counselors
-  getAvailableCounselors: async (params?: GetCounselorsParams): Promise<ApiResponse<Counselor[]>> => {
-    const response = await api.get('/appointments/counselors', { params })
-    return response.data
-  },
-
-  // Get available time slots for a counselor
-  getAvailableSlots: async (counselorId: string, date: string): Promise<ApiResponse<{
-    counselor: any
-    date: string
-    availableSlots: AvailableSlot[]
-  }>> => {
-    const response = await api.get(`/appointments/counselors/${counselorId}/slots`, {
-      params: { date }
-    })
-    return response.data
-  },
-
-  // Rate appointment
-  rateAppointment: async (id: string, data: RateAppointmentData): Promise<ApiResponse> => {
-    const response = await api.post(`/appointments/${id}/rate`, data)
-    return response.data
-  }
-}
-
-export const counselorService = {
-  // Get counselor profile
-  getCounselorProfile: async (): Promise<ApiResponse<Counselor>> => {
-    const response = await api.get('/counselors/profile')
-    return response.data
-  },
-
-  // Create or update counselor profile
-  createOrUpdateCounselorProfile: async (data: any): Promise<ApiResponse<Counselor>> => {
-    const response = await api.post('/counselors/profile', data)
-    return response.data
-  },
-
-  // Update counselor availability
-  updateAvailability: async (data: { availability: Availability[], isAvailable?: boolean }): Promise<ApiResponse<Counselor>> => {
-    const response = await api.put('/counselors/availability', data)
-    return response.data
-  },
-
-  // Get counselor statistics
-  getCounselorStats: async (): Promise<ApiResponse<{
-    totalAppointments: number
-    completedAppointments: number
-    upcomingAppointments: number
-    todayAppointments: number
-    averageRating: number
-    totalSessions: number
-    rating: number
-    isAvailable: boolean
-  }>> => {
-    const response = await api.get('/counselors/stats')
-    return response.data
-  },
-
-  // Get all counselors (admin only)
-  getAllCounselors: async (params?: {
-    page?: number
-    limit?: number
-    specialization?: string | string[]
-    isAvailable?: boolean
-  }): Promise<ApiResponse<{
-    counselors: Counselor[]
-    pagination: {
-      currentPage: number
-      totalPages: number
-      totalCounselors: number
-      hasNext: boolean
-      hasPrev: boolean
+  getAvailableCounselors: async (params?: {
+    specialization?: string
+    date?: string
+    time?: string
+  }): Promise<ApiResponse<Counselor[]>> => {
+    try {
+      const response = await api.get('/appointments/counselors', { params })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching available counselors:', error)
+      throw error
     }
-  }>> => {
-    const response = await api.get('/counselors', { params })
-    return response.data
+  },
+
+  // Get counselor availability
+  getCounselorAvailability: async (counselorId: string, date?: string): Promise<ApiResponse<Availability[]>> => {
+    try {
+      const params = date ? { date } : {}
+      const response = await api.get(`/appointments/counselors/${counselorId}/availability`, { params })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching counselor availability:', error)
+      throw error
+    }
   }
 }
 

@@ -24,28 +24,17 @@ const RecentActivity = () => {
     },
     {
       id: 2,
-      type: 'appointment',
-      title: 'Upcoming Appointment',
-      description: 'Tomorrow at 2:00 PM',
-      icon: Calendar,
-      href: '/app/appointments',
-      color: 'bg-green-100',
-      iconColor: 'text-green-600',
-      action: 'View'
-    },
-    {
-      id: 3,
-      type: 'forum',
-      title: 'Forum Discussion',
+      type: 'community',
+      title: 'Community Discussion',
       description: 'New replies in "Stress Management"',
       icon: Users,
-      href: '/app/forums',
+      href: '/app/community',
       color: 'bg-purple-100',
       iconColor: 'text-purple-600',
       action: 'Join'
     },
     {
-      id: 4,
+      id: 3,
       type: 'resource',
       title: 'New Resource Available',
       description: 'Meditation Techniques for Students',
@@ -60,51 +49,53 @@ const RecentActivity = () => {
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-prata font-semibold text-gray-900">
+        <h2 className="text-3xl font-bold text-gray-900">
           Recent Activity
         </h2>
         <Link
           to="/app/activity"
-          className="text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center"
+          className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center"
         >
           View All
           <ArrowRight className="h-4 w-4 ml-1" />
         </Link>
       </div>
       
-      <div className="space-y-4">
-        {activities.map((activity, index) => {
-          const Icon = activity.icon
-          return (
-            <motion.div
-              key={activity.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-            >
-              <div className="flex items-center p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
-                <div className={`h-10 w-10 ${activity.color} rounded-full flex items-center justify-center mr-4 flex-shrink-0`}>
-                  <Icon className={`h-5 w-5 ${activity.iconColor}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {activity.title}
-                  </p>
-                  <p className="text-sm text-gray-600 truncate">
-                    {activity.description}
-                  </p>
-                </div>
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
+        <div className="space-y-4">
+          {activities.map((activity, index) => {
+            const Icon = activity.icon
+            return (
+              <motion.div
+                key={activity.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
                 <Link
                   to={activity.href}
-                  className="ml-4 text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center"
+                  className="group flex items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200"
                 >
-                  {activity.action}
-                  <ArrowRight className="h-4 w-4 ml-1" />
+                  <div className={`h-12 w-12 ${activity.color} rounded-xl flex items-center justify-center mr-4 flex-shrink-0`}>
+                    <Icon className={`h-6 w-6 ${activity.iconColor}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {activity.title}
+                    </p>
+                    <p className="text-sm text-gray-600 truncate">
+                      {activity.description}
+                    </p>
+                  </div>
+                  <div className="ml-4 text-blue-600 group-hover:text-blue-700 text-sm font-medium flex items-center">
+                    {activity.action}
+                    <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
+                  </div>
                 </Link>
-              </div>
-            </motion.div>
-          )
-        })}
+              </motion.div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

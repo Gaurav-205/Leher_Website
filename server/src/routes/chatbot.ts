@@ -6,7 +6,8 @@ import {
   getChatHistory,
   getChatSessions,
   endChatSession,
-  getWellnessTips
+  getWellnessTips,
+  trackMood
 } from '@controllers/chatbotController'
 
 const router = express.Router()
@@ -61,5 +62,31 @@ router.delete('/sessions/:sessionId', endChatSession)
 // @route   GET /api/chatbot/wellness-tips
 // @access  Private
 router.get('/wellness-tips', getWellnessTips)
+
+// @desc    Track user mood
+// @route   POST /api/chatbot/mood
+// @access  Private
+router.post('/mood', [
+  body('mood')
+    .isInt({ min: 1, max: 5 })
+    .withMessage('Mood must be between 1 and 5'),
+  body('notes')
+    .optional()
+    .isString()
+    .isLength({ max: 500 })
+    .withMessage('Notes must be less than 500 characters'),
+  body('sessionId')
+    .optional()
+    .custom((value) => {
+      if (value === null || value === undefined || value === '') {
+        return true
+      }
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(value)) {
+        throw new Error('Session ID must be a valid UUID')
+      }
+      return true
+    })
+], trackMood)
 
 export default router

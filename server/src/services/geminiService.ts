@@ -24,25 +24,36 @@ class GeminiService {
     }
 
     try {
-      // Create a comprehensive prompt for mental health support
-      const systemPrompt = `You are Lehar, a compassionate AI mental health companion designed to support students in India. Your role is to:
+      // Parse enhanced context if available
+      let enhancedContext = null
+      try {
+        enhancedContext = context ? JSON.parse(context) : null
+      } catch (e) {
+        // Fallback to string context
+        enhancedContext = { recentMessages: context }
+      }
 
-1. Provide empathetic, non-judgmental support
-2. Offer practical coping strategies and mindfulness techniques
-3. Encourage professional help when needed
-4. Be culturally sensitive to Indian students' experiences
-5. Maintain confidentiality and never share personal information
-6. Focus on wellness, stress management, and emotional support
+      // Create a conversational prompt for natural, human-like responses
+      const systemPrompt = `You are Lehar, a friendly AI mental health companion. Keep responses SHORT, CONVERSATIONAL, and HUMAN-LIKE. 
 
-Guidelines:
-- Always be warm, understanding, and supportive
-- Use simple, clear language
-- Provide actionable advice when appropriate
-- Never diagnose mental health conditions
-- Encourage seeking professional help for serious concerns
-- Be mindful of cultural context and academic pressures in India
+Key rules:
+- Talk like a caring friend, not a formal therapist
+- Keep responses under 2-3 sentences
+- Use simple, everyday language
+- Be warm and empathetic
+- If someone mentions crisis/self-harm, immediately provide: National Suicide Prevention Helpline: 9152987821, KIRAN: 1800-599-0019
+- You're not a doctor - just here to listen and support
+- Understand Indian culture and family dynamics
+- Never ask for personal details
+- If you don't know something, just say so simply
 
-${context ? `Context: ${context}` : ''}
+${enhancedContext ? `
+CONVERSATION CONTEXT:
+- Message count in session: ${enhancedContext.messageCount || 0}
+- Session duration: ${enhancedContext.sessionDuration ? Math.round(enhancedContext.sessionDuration / 60000) + ' minutes' : 'Unknown'}
+- User mentioned mood: ${enhancedContext.userMood === 'mood_mentioned' ? 'Yes' : 'No'}
+- Recent conversation: ${enhancedContext.recentMessages || 'None'}
+` : ''}
 
 User message: ${prompt}`
 
@@ -72,15 +83,18 @@ User message: ${prompt}`
     }
 
     try {
-      const crisisPrompt = `You are Lehar, an AI mental health companion. The user seems to be in distress. Provide immediate support while emphasizing the importance of professional help.
+      const crisisPrompt = `You are Lehar, a caring AI friend. Someone is in crisis - respond with SHORT, CARING messages.
 
-Guidelines for crisis response:
-1. Acknowledge their feelings with empathy
-2. Provide immediate calming techniques
-3. Strongly encourage contacting emergency services or crisis helplines
-4. Offer specific Indian crisis resources (KIRAN helpline, emergency numbers)
-5. Keep the response concise but supportive
-6. Never minimize their feelings
+CRISIS RESPONSE:
+- Show you care: "I'm really worried about you right now"
+- Keep it simple and direct
+- Immediately share these helplines:
+  • Emergency: 112
+  • KIRAN: 1800-599-0019  
+  • Suicide Prevention: 9152987821
+- Suggest breathing: "Let's take a deep breath together"
+- Encourage reaching out to family/friends
+- Keep responses under 3 sentences
 
 User message: ${prompt}`
 
@@ -106,24 +120,31 @@ User message: ${prompt}`
 
   async generateWellnessTips(): Promise<string[]> {
     if (!this.model) {
-      // Return fallback tips when API is not available
+      // Return short, conversational fallback tips
       return [
-        "Take regular breaks during study sessions - even 5 minutes can help refresh your mind",
-        "Practice deep breathing exercises when feeling overwhelmed",
-        "Connect with friends and family regularly - social support is crucial",
-        "Maintain a consistent sleep schedule for better mental clarity",
-        "Engage in physical activity daily, even if it's just a short walk"
+        "Take deep breaths - inhale for 4, hold for 4, exhale for 6. It really helps!",
+        "Take study breaks every hour - even 5 minutes can refresh your mind",
+        "Call or text a friend today - social connection is so important",
+        "Try to sleep at the same time each night - your brain will thank you",
+        "Go for a 15-minute walk - fresh air and movement boost your mood",
+        "Try 5 minutes of meditation or just sitting quietly - it's easier than you think",
+        "Don't skip meals - your brain needs fuel to function well",
+        "Celebrate small wins - progress matters more than perfection"
       ]
     }
 
     try {
-      const prompt = `Generate 5 practical mental wellness tips specifically for Indian students. Each tip should be:
-1. Culturally relevant to Indian academic and social context
-2. Practical and actionable
-3. Focused on stress management, mindfulness, or emotional wellbeing
-4. Written in a supportive, encouraging tone
+      const prompt = `Generate 8 short, friendly wellness tips for Indian students. Keep each tip under 15 words and conversational. Focus on:
+- Breathing exercises
+- Study breaks
+- Sleep habits
+- Social connection
+- Physical activity
+- Mindfulness
+- Eating well
+- Celebrating progress
 
-Format as a simple list, one tip per line.`
+Make them sound like advice from a caring friend, not a medical professional.`
 
       const result = await this.model.generateContent(prompt)
       const response = await result.response
@@ -133,16 +154,19 @@ Format as a simple list, one tip per line.`
       const tips = text.split('\n').filter((tip: string) => tip.trim().length > 0)
       
       logger.info('Wellness tips generated successfully')
-      return tips.slice(0, 5) // Ensure we only return 5 tips
+      return tips.slice(0, 8) // Ensure we only return 8 tips
     } catch (error) {
       logger.error('Error generating wellness tips:', error)
       // Return fallback tips if API fails
       return [
-        "Take regular breaks during study sessions - even 5 minutes can help refresh your mind",
-        "Practice deep breathing exercises when feeling overwhelmed",
-        "Connect with friends and family regularly - social support is crucial",
-        "Maintain a consistent sleep schedule for better mental clarity",
-        "Engage in physical activity daily, even if it's just a short walk"
+        "Practice deep breathing exercises: Inhale for 4 counts, hold for 4, exhale for 6 - this activates your body's relaxation response",
+        "Take regular study breaks every 45-60 minutes - even 5 minutes can help refresh your mind and reduce stress",
+        "Connect with friends and family regularly - social support is crucial for mental wellbeing",
+        "Maintain a consistent sleep schedule - aim for 7-9 hours of quality sleep for better mental clarity",
+        "Engage in physical activity daily - even a 15-minute walk can boost your mood and energy",
+        "Practice mindfulness or meditation - start with just 5 minutes daily to build emotional resilience",
+        "Eat regular, balanced meals - proper nutrition supports both physical and mental health",
+        "Set realistic academic goals and celebrate small achievements - progress matters more than perfection"
       ]
     }
   }
@@ -151,34 +175,34 @@ Format as a simple list, one tip per line.`
     const lowerPrompt = prompt.toLowerCase()
     
     // Crisis detection fallback
-    const crisisKeywords = ['suicide', 'kill myself', 'end it all', 'not worth living', 'want to die', 'self harm', 'hurt myself']
+    const crisisKeywords = ['suicide', 'kill myself', 'end it all', 'not worth living', 'want to die', 'self harm', 'hurt myself', 'end my life', 'not worth it', 'better off dead']
     if (crisisKeywords.some(keyword => lowerPrompt.includes(keyword))) {
-      return "I understand you're going through a difficult time. Please reach out to emergency services immediately:\n\n• Emergency: 108\n• KIRAN Helpline: 1800-599-0019\n• National Suicide Prevention Helpline: 9152987821\n\nYour safety is important. Please contact a trusted friend, family member, or professional counselor right away."
+      return "I'm really worried about you right now. Please call these helplines immediately: Emergency 112, KIRAN 1800-599-0019, or Suicide Prevention 9152987821. You're not alone and people want to help you."
     }
     
-    // Context-aware fallback responses
+    // Short, conversational fallback responses
     if (lowerPrompt.includes('anxious') || lowerPrompt.includes('anxiety')) {
-      return "I understand you're feeling anxious. Here are some helpful techniques:\n\n• Take deep breaths: Inhale for 4 counts, hold for 4, exhale for 6\n• Practice grounding: Name 5 things you can see, 4 you can touch, 3 you can hear\n• Try progressive muscle relaxation\n• Consider talking to a counselor or trusted friend\n\nRemember, it's okay to feel anxious - you're not alone in this."
+      return "I get it, anxiety can feel really overwhelming. Try taking some deep breaths - inhale for 4, hold for 4, exhale for 6. It really helps calm your nervous system. You're not alone in this."
     }
     
     if (lowerPrompt.includes('stress') || lowerPrompt.includes('stressed')) {
-      return "Stress is a common experience, especially for students. Here are some strategies:\n\n• Break tasks into smaller, manageable steps\n• Take regular breaks during study sessions\n• Practice time management techniques\n• Engage in physical activity or relaxation exercises\n• Maintain a healthy sleep schedule\n\nDon't hesitate to seek support from friends, family, or mental health professionals."
+      return "Stress is tough, especially with exams and family pressure. Try breaking your work into smaller chunks and take breaks every hour. Remember, your worth isn't just about grades - you're doing great."
     }
     
     if (lowerPrompt.includes('sad') || lowerPrompt.includes('depressed') || lowerPrompt.includes('down')) {
-      return "I'm sorry you're feeling this way. It's important to acknowledge your feelings:\n\n• Allow yourself to feel without judgment\n• Connect with supportive people in your life\n• Engage in activities that bring you joy\n• Maintain basic self-care routines\n• Consider professional help if these feelings persist\n\nRemember, seeking help is a sign of strength, not weakness."
+      return "I'm sorry you're feeling this way. It's okay to feel sad sometimes. Try to do one small thing today that usually makes you feel a bit better, even if it's just getting some fresh air."
     }
     
     if (lowerPrompt.includes('sleep') || lowerPrompt.includes('insomnia')) {
-      return "Sleep issues can significantly impact your wellbeing. Try these tips:\n\n• Maintain a consistent sleep schedule\n• Create a relaxing bedtime routine\n• Avoid screens 1 hour before bed\n• Keep your bedroom cool, dark, and quiet\n• Limit caffeine and heavy meals before bedtime\n• Consider relaxation techniques like meditation\n\nIf sleep problems persist, consult a healthcare provider."
+      return "Sleep troubles are so frustrating! Try keeping your phone away an hour before bed and maybe some gentle music. A consistent bedtime routine really helps."
     }
     
     if (lowerPrompt.includes('exam') || lowerPrompt.includes('study') || lowerPrompt.includes('academic')) {
-      return "Academic pressure is real and challenging. Here's how to manage it:\n\n• Create a realistic study schedule with breaks\n• Use active learning techniques\n• Practice past papers and mock tests\n• Form study groups for support\n• Maintain a healthy work-life balance\n• Remember that your worth isn't defined by grades alone\n\nYou're doing your best, and that's enough."
+      return "Exam stress is real! Remember to take breaks every hour and don't forget to eat and sleep. Your worth isn't just about grades - you're doing great."
     }
     
     // General supportive response
-    return "I'm here to listen and support you. While I'm currently experiencing some technical limitations, I want you to know that:\n\n• Your feelings are valid and important\n• It's okay to not be okay sometimes\n• Seeking help is a sign of strength\n• You're not alone in your struggles\n\nConsider reaching out to:\n• Trusted friends or family members\n• Your college counseling center\n• Mental health professionals\n• Crisis helplines if you're in immediate distress\n\nTake care of yourself, and remember that better days are ahead."
+    return "Hey, I'm Lehar! I'm here to listen and support you. If you're feeling really overwhelmed, remember these helplines: KIRAN 1800-599-0019 or Emergency 112. What's on your mind?"
   }
 }
 

@@ -21,19 +21,10 @@ const QuickActions = () => {
       gradient: 'from-blue-500 to-blue-600'
     },
     {
-      title: 'Book Appointment',
-      description: 'Schedule with a counselor',
-      icon: Calendar,
-      href: '/app/appointments',
-      color: 'bg-green-500',
-      hoverColor: 'hover:bg-green-600',
-      gradient: 'from-green-500 to-green-600'
-    },
-    {
-      title: 'Support Forums',
+      title: 'Community',
       description: 'Connect with peers',
       icon: Users,
-      href: '/app/forums',
+      href: '/app/community',
       color: 'bg-purple-500',
       hoverColor: 'hover:bg-purple-600',
       gradient: 'from-purple-500 to-purple-600'
@@ -46,12 +37,21 @@ const QuickActions = () => {
       color: 'bg-orange-500',
       hoverColor: 'hover:bg-orange-600',
       gradient: 'from-orange-500 to-orange-600'
+    },
+    {
+      title: 'Profile',
+      description: 'Manage your account',
+      icon: Heart,
+      href: '/app/profile',
+      color: 'bg-green-500',
+      hoverColor: 'hover:bg-green-600',
+      gradient: 'from-green-500 to-green-600'
     }
   ]
 
   return (
     <div className="mb-8">
-      <h2 className="text-2xl font-prata font-semibold text-gray-900 mb-6">
+      <h2 className="text-3xl font-bold text-gray-900 mb-8">
         Quick Actions
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -66,18 +66,18 @@ const QuickActions = () => {
             >
               <Link
                 to={action.href}
-                className="block p-6 bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group h-full"
+                className="group block p-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full"
               >
-                <div className={`inline-flex p-3 rounded-lg bg-gradient-to-r ${action.gradient} mb-4 group-hover:scale-110 transition-transform duration-200`}>
-                  <Icon className="h-6 w-6 text-white" />
+                <div className={`inline-flex p-4 rounded-2xl bg-gradient-to-r ${action.gradient} mb-4 group-hover:scale-110 transition-transform duration-200`}>
+                  <Icon className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors duration-200">
+                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors duration-200">
                   {action.title}
                 </h3>
-                <p className="text-gray-600 text-sm mb-4">
+                <p className="text-gray-600 text-sm mb-4 leading-relaxed">
                   {action.description}
                 </p>
-                <div className="flex items-center text-primary-600 text-sm font-medium group-hover:text-primary-700">
+                <div className="flex items-center text-blue-600 text-sm font-semibold group-hover:text-blue-700">
                   <span>Get Started</span>
                   <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
                 </div>

@@ -1,37 +1,48 @@
-import { motion } from 'framer-motion'
-import { Calendar, Clock, User, Video, Trash2, Eye } from 'lucide-react'
+import { Calendar, Clock, User, MapPin, Video, MessageSquare, X } from 'lucide-react'
 import { Appointment } from '@services/appointmentService'
 
 interface AppointmentCardProps {
   appointment: Appointment
-  onCancel: (id: string) => void
-  onViewDetails: (appointment: Appointment) => void
+  onCancel: (appointmentId: string) => void
 }
 
-const AppointmentCard = ({ appointment, onCancel, onViewDetails }: AppointmentCardProps) => {
+const AppointmentCard = ({ appointment, onCancel }: AppointmentCardProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        return 'bg-yellow-100 text-yellow-800'
       case 'confirmed':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
+        return 'bg-blue-100 text-blue-800'
       case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200'
+        return 'bg-green-100 text-green-800'
       case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200'
+        return 'bg-red-100 text-red-800'
       case 'no-show':
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'bg-gray-100 text-gray-800'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'bg-gray-100 text-gray-800'
     }
   }
 
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'individual':
+        return 'bg-purple-100 text-purple-800'
+      case 'group':
+        return 'bg-indigo-100 text-indigo-800'
+      case 'emergency':
+        return 'bg-red-100 text-red-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'short',
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
       year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric'
     })
   }
@@ -44,97 +55,159 @@ const AppointmentCard = ({ appointment, onCancel, onViewDetails }: AppointmentCa
     return `${displayHour}:${minutes} ${ampm}`
   }
 
-  const isUpcoming = () => {
-    const appointmentDate = new Date(`${appointment.date}T${appointment.time}`)
-    return appointmentDate > new Date() && ['scheduled', 'confirmed'].includes(appointment.status)
-  }
-
-  const isToday = () => {
-    const appointmentDate = new Date(`${appointment.date}T${appointment.time}`)
-    const today = new Date()
-    return appointmentDate.toDateString() === today.toDateString()
-  }
-
+  const canCancel = appointment.status === 'scheduled' || appointment.status === 'confirmed'
+  const isUpcoming = new Date(appointment.date) > new Date()
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.002 }}
-      className={`bg-white border rounded p-3 transition-all duration-200 ${
-        isToday() ? 'border-primary-300 shadow-sm' : 'border-gray-200 hover:shadow-sm'
-      }`}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2 flex-1 min-w-0">
-          <div className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-            isToday() ? 'bg-primary-100' : 'bg-gray-100'
-          }`}>
-            <User className={`h-3 w-3 ${isToday() ? 'text-primary-600' : 'text-gray-600'}`} />
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-1 mb-0.5">
-              <h3 className="text-xs font-semibold text-gray-900 truncate">
-                {appointment.counselor?.firstName} {appointment.counselor?.lastName}
-              </h3>
-              <span className={`px-1.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(appointment.status)}`}>
-                {appointment.status}
+    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          {/* Header with status and type */}
+          <div className="flex items-center space-x-3 mb-4">
+            <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status)}`}>
+              {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+            </span>
+            <span className={`px-3 py-1 text-xs font-medium rounded-full ${getTypeColor(appointment.type)}`}>
+              {appointment.type.charAt(0).toUpperCase() + appointment.type.slice(1)}
+            </span>
+            {appointment.duration && (
+              <span className="text-sm text-gray-500">
+                {appointment.duration} minutes
               </span>
-              {isToday() && (
-                <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-primary-100 text-primary-800">
-                  Today
-                </span>
-              )}
+            )}
+          </div>
+
+          {/* Date and Time */}
+          <div className="flex items-center space-x-6 mb-4">
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm font-medium">{formatDate(appointment.date)}</span>
             </div>
-            
-            <div className="flex items-center space-x-3 text-xs text-gray-600">
-              <div className="flex items-center">
-                <Calendar className="h-3 w-3 mr-0.5" />
-                {formatDate(appointment.date)}
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-3 w-3 mr-0.5" />
-                {formatTime(appointment.time)}
-              </div>
-              {appointment.meetingLink && (
-                <div className="flex items-center text-primary-600">
-                  <Video className="h-3 w-3 mr-0.5" />
-                  <a 
-                    href={appointment.meetingLink} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="hover:underline"
-                  >
-                    Join
-                  </a>
-                </div>
-              )}
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Clock className="h-4 w-4" />
+              <span className="text-sm font-medium">{formatTime(appointment.time)}</span>
             </div>
           </div>
+
+          {/* Counselor/Student Info */}
+          <div className="flex items-center space-x-6 mb-4">
+            {appointment.counselor && (
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    Dr. {appointment.counselor.firstName} {appointment.counselor.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500">Counselor</p>
+                </div>
+              </div>
+            )}
+            {appointment.student && (
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-gray-400" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {appointment.student.firstName} {appointment.student.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500">Student</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Location or Meeting Link */}
+          {(appointment.location || appointment.meetingLink) && (
+            <div className="flex items-center space-x-2 mb-4">
+              {appointment.meetingLink ? (
+                <>
+                  <Video className="h-4 w-4 text-gray-400" />
+                  <a
+                    href={appointment.meetingLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Join Video Call
+                  </a>
+                </>
+              ) : (
+                <>
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">{appointment.location}</span>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Notes */}
+          {appointment.notes && (
+            <div className="mb-4">
+              <div className="flex items-start space-x-2">
+                <MessageSquare className="h-4 w-4 text-gray-400 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 mb-1">Notes</p>
+                  <p className="text-sm text-gray-600">{appointment.notes}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Student Notes */}
+          {appointment.studentNotes && (
+            <div className="mb-4">
+              <div className="flex items-start space-x-2">
+                <MessageSquare className="h-4 w-4 text-gray-400 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900 mb-1">Your Notes</p>
+                  <p className="text-sm text-gray-600">{appointment.studentNotes}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Rating */}
+          {appointment.rating && (
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-900 mb-1">Rating</p>
+              <div className="flex items-center space-x-1">
+                {[...Array(5)].map((_, i) => (
+                  <span
+                    key={i}
+                    className={`text-lg ${
+                      i < appointment.rating! ? 'text-yellow-400' : 'text-gray-300'
+                    }`}
+                  >
+                    ★
+                  </span>
+                ))}
+                <span className="text-sm text-gray-500 ml-2">({appointment.rating}/5)</span>
+              </div>
+            </div>
+          )}
+
+          {/* Feedback */}
+          {appointment.feedback && (
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-900 mb-1">Feedback</p>
+              <p className="text-sm text-gray-600">{appointment.feedback}</p>
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center space-x-0.5 ml-2">
-          {isUpcoming() && (
+        {/* Actions */}
+        <div className="flex flex-col space-y-2">
+          {canCancel && isUpcoming && (
             <button
               onClick={() => onCancel(appointment._id)}
-              className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-              title="Cancel appointment"
+              className="inline-flex items-center px-3 py-1 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
             >
-              <Trash2 className="h-3 w-3" />
+              <X className="h-4 w-4 mr-1" />
+              Cancel
             </button>
           )}
-          
-          <button
-            onClick={() => onViewDetails(appointment)}
-            className="p-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            title="View details"
-          >
-            <Eye className="h-3 w-3" />
-          </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 

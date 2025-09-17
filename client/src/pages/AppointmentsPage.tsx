@@ -1,220 +1,259 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Calendar, Clock, User, Plus, AlertTriangle, Search, Filter } from 'lucide-react'
-import AppointmentBooking from '@components/appointments/AppointmentBooking'
-import AppointmentList from '@components/appointments/AppointmentList'
+import { useState, useEffect } from 'react'
+import { Calendar, Clock, User, Plus, Filter, Search } from 'lucide-react'
+import { appointmentService, Appointment, Counselor } from '@services/appointmentService'
+import AppointmentCard from '@components/appointments/AppointmentCard'
+import BookAppointmentModal from '@components/appointments/BookAppointmentModal'
+import toast from 'react-hot-toast'
 
 const AppointmentsPage = () => {
-  const [showBookingModal, setShowBookingModal] = useState(false)
-  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showBookModal, setShowBookModal] = useState(false)
+  const [filterStatus, setFilterStatus] = useState('')
+  const [filterType, setFilterType] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
 
-  const handleBookingSuccess = () => {
-    setRefreshTrigger(prev => prev + 1)
+  useEffect(() => {
+    loadAppointments()
+  }, [filterStatus, filterType])
+
+  const loadAppointments = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const params: any = {}
+      if (filterStatus) params.status = filterStatus
+      if (filterType) params.type = filterType
+      
+      const response = await appointmentService.getAppointments(params)
+      if (response.success && response.data) {
+        setAppointments(response.data.appointments)
+      }
+    } catch (err) {
+      console.error('Error loading appointments:', err)
+      setError('Failed to load appointments. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleBookAppointment = () => {
+    setShowBookModal(true)
+  }
+
+  const handleAppointmentBooked = (newAppointment: Appointment) => {
+    setAppointments(prev => [newAppointment, ...prev])
+    setShowBookModal(false)
+    toast.success('Appointment booked successfully!')
+  }
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    try {
+      await appointmentService.cancelAppointment(appointmentId)
+      setAppointments(prev => 
+        prev.map(apt => 
+          apt._id === appointmentId 
+            ? { ...apt, status: 'cancelled' as const }
+            : apt
+        )
+      )
+      toast.success('Appointment cancelled successfully!')
+    } catch (err) {
+      console.error('Error cancelling appointment:', err)
+      toast.error('Failed to cancel appointment')
+    }
+  }
+
+  const filteredAppointments = appointments.filter(appointment => {
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase()
+      const counselorName = appointment.counselor 
+        ? `${appointment.counselor.firstName} ${appointment.counselor.lastName}`.toLowerCase()
+        : ''
+      const studentName = appointment.student 
+        ? `${appointment.student.firstName} ${appointment.student.lastName}`.toLowerCase()
+        : ''
+      
+      return counselorName.includes(searchLower) || 
+             studentName.includes(searchLower) ||
+             appointment.notes?.toLowerCase().includes(searchLower)
+    }
+    return true
+  })
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="h-full w-full flex flex-col">
+          <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-light text-gray-900">Appointments</h1>
+                <p className="text-lg text-gray-600">Manage your therapy sessions</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading appointments...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+        <div className="h-full w-full flex flex-col">
+          <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-light text-gray-900">Appointments</h1>
+                <p className="text-lg text-gray-600">Manage your therapy sessions</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="h-16 w-16 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Calendar className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-light text-gray-900 mb-2">Error loading appointments</h3>
+              <p className="text-lg text-gray-600 mb-6">{error}</p>
+              <button 
+                onClick={loadAppointments}
+                className="inline-flex items-center px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors duration-200"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="h-full w-full flex flex-col">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-prata font-bold text-gray-900 mb-2">
-                Appointments
-              </h1>
-              <p className="text-lg text-gray-600">
-                Schedule and manage your counseling sessions
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0">
-              <button
-                onClick={() => setShowBookingModal(true)}
-                className="inline-flex items-center px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Book Appointment
-              </button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Emergency Support Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="mb-8"
-        >
-          <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 text-white">
-            <div className="flex items-center">
-              <div className="h-12 w-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
-                <AlertTriangle className="h-6 w-6" />
+        <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-white" />
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-1">Emergency Support Available</h3>
-                <p className="text-red-100 text-sm">
-                  Need immediate help? Our crisis support team is available 24/7.
+              <div>
+                <h1 className="text-2xl font-light text-gray-900">Appointments</h1>
+                <p className="text-lg text-gray-600">Manage your therapy sessions</p>
+              </div>
+            </div>
+            <button
+              onClick={handleBookAppointment}
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Book Appointment
+            </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search appointments..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">All Status</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">All Types</option>
+              <option value="individual">Individual</option>
+              <option value="group">Group</option>
+              <option value="emergency">Emergency</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Appointments List */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4">
+            {filteredAppointments.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="h-16 w-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-light text-gray-900 mb-2">No appointments found</h3>
+                <p className="text-lg text-gray-600 mb-6">
+                  {searchQuery || filterStatus || filterType 
+                    ? 'Try adjusting your search or filters'
+                    : 'Book your first appointment to get started'
+                  }
                 </p>
+                {!searchQuery && !filterStatus && !filterType && (
+                  <button
+                    onClick={handleBookAppointment}
+                    className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Book Appointment
+                  </button>
+                )}
               </div>
-              <div className="text-right">
-                <div className="text-sm text-red-100 mb-1">Emergency: 108</div>
-                <div className="text-sm text-red-100">KIRAN: 1800-599-0019</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Quick Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-        >
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                <Calendar className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Upcoming</p>
-                <p className="text-2xl font-bold text-gray-900">-</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                <Clock className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">-</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-                <User className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Sessions</p>
-                <p className="text-2xl font-bold text-gray-900">-</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Main Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="grid grid-cols-1 lg:grid-cols-4 gap-8"
-        >
-          {/* Appointments List */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900">Your Appointments</h2>
-                <p className="text-gray-600 mt-1">Manage your scheduled counseling sessions</p>
-              </div>
-              <div className="p-6">
-                <AppointmentList refreshTrigger={refreshTrigger} />
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button
-                  onClick={() => setShowBookingModal(true)}
-                  className="w-full flex items-center justify-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Book New Appointment
-                </button>
-                
-                <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Search className="h-4 w-4 mr-2" />
-                  Find Counselors
-                </button>
-                
-                <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter Appointments
-                </button>
-              </div>
-            </div>
-
-            {/* Help & Support */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Help & Support</h3>
+            ) : (
               <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">How to Book</h4>
-                  <p className="text-sm text-gray-600">
-                    Choose a counselor, select your preferred date and time, and provide any relevant notes.
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Cancellation Policy</h4>
-                  <p className="text-sm text-gray-600">
-                    You can cancel appointments up to 2 hours before the scheduled time.
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Need Help?</h4>
-                  <p className="text-sm text-gray-600">
-                    Contact our support team if you have any questions about your appointments.
-                  </p>
-                </div>
+                {filteredAppointments.map((appointment) => (
+                  <AppointmentCard
+                    key={appointment._id}
+                    appointment={appointment}
+                    onCancel={handleCancelAppointment}
+                  />
+                ))}
               </div>
-            </div>
-
-            {/* Emergency Resources */}
-            <div className="bg-red-50 rounded-xl border border-red-200 p-6">
-              <h3 className="text-lg font-semibold text-red-900 mb-4">Emergency Resources</h3>
-              <div className="space-y-3">
-                <div className="text-sm">
-                  <div className="font-medium text-red-900">Emergency Services</div>
-                  <div className="text-red-700">108</div>
-                </div>
-                <div className="text-sm">
-                  <div className="font-medium text-red-900">KIRAN Helpline</div>
-                  <div className="text-red-700">1800-599-0019</div>
-                </div>
-                <div className="text-sm">
-                  <div className="font-medium text-red-900">National Suicide Prevention</div>
-                  <div className="text-red-700">9152987821</div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
-        </motion.div>
-
-        {/* Booking Modal */}
-        {showBookingModal && (
-          <AppointmentBooking
-            onClose={() => setShowBookingModal(false)}
-            onSuccess={handleBookingSuccess}
-          />
-        )}
+        </div>
       </div>
+
+      {/* Book Appointment Modal */}
+      {showBookModal && (
+        <BookAppointmentModal
+          isOpen={showBookModal}
+          onClose={() => setShowBookModal(false)}
+          onAppointmentBooked={handleAppointmentBooked}
+        />
+      )}
     </div>
   )
 }

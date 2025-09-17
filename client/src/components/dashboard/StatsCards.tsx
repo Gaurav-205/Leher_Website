@@ -48,7 +48,7 @@ const StatsCards = () => {
 
   return (
     <div className="mb-8">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon
           return (
@@ -57,18 +57,18 @@ const StatsCards = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow duration-300"
+              className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/20 text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
             >
-              <div className={`inline-flex p-3 ${stat.bgColor} rounded-lg mb-4`}>
-                <Icon className={`h-6 w-6 ${stat.color}`} />
+              <div className={`inline-flex p-4 ${stat.bgColor} rounded-2xl mb-4`}>
+                <Icon className={`h-8 w-8 ${stat.color}`} />
               </div>
-              <div className={`text-2xl font-bold ${stat.color} mb-1`}>
+              <div className={`text-3xl font-bold ${stat.color} mb-2`}>
                 {stat.value}
               </div>
-              <div className="text-sm font-medium text-gray-900 mb-1">
+              <div className="text-lg font-semibold text-gray-900 mb-2">
                 {stat.label}
               </div>
-              <div className="text-xs text-gray-600">
+              <div className="text-sm text-gray-600">
                 {stat.description}
               </div>
             </motion.div>

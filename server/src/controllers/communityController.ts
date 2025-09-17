@@ -1,89 +1,64 @@
 import { Request, Response, NextFunction } from 'express'
+import { validationResult } from 'express-validator'
+import mongoose from 'mongoose'
 import { CommunityPost } from '@models/CommunityPost'
 import { CommunityComment } from '@models/CommunityComment'
 import { User } from '@models/User'
-import mongoose from 'mongoose'
+import { AuthRequest } from '@middleware/auth'
+import logger from '@utils/logger'
 
-interface AuthRequest extends Request {
-  user?: {
-    _id: string
-    role: string
-  }
-}
-
-// @desc    Get all community posts with pagination and filtering
+// @desc    Get all community posts
 // @route   GET /api/community/posts
 // @access  Public
 export const getCommunityPosts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const {
-      page = 1,
-      limit = 10,
-      category,
-      tags,
-      search,
-      sortBy = 'createdAt',
-      sortOrder = 'desc'
+    const { 
+      page = 1, 
+      limit = 10, 
+      category, 
+      search, 
+      sortBy = 'createdAt', 
+      sortOrder = 'desc' 
     } = req.query
 
-    const skip = (Number(page) - 1) * Number(limit)
-    const query: any = { isApproved: true }
-
-    // Filter by category
+    // Build query
+    let query: any = { isApproved: true }
+    
     if (category) {
       query.category = category
     }
-
-    // Filter by tags
-    if (tags) {
-      const tagArray = Array.isArray(tags) ? tags : [tags]
-      query.tags = { $in: tagArray }
-    }
-
-    // Search functionality
+    
     if (search) {
+      const searchString = String(search)
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { content: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search as string, 'i')] } }
+        { title: { $regex: searchString, $options: 'i' } },
+        { content: { $regex: searchString, $options: 'i' } },
+        { tags: { $in: [new RegExp(searchString, 'i')] } }
       ]
     }
 
-    // Sort options
-    const sortOptions: any = {}
-    if (sortBy === 'popular') {
-      sortOptions.likeCount = -1
-      sortOptions.commentCount = -1
-      sortOptions.createdAt = -1
-    } else if (sortBy === 'trending') {
-      sortOptions.views = -1
-      sortOptions.likeCount = -1
-      sortOptions.createdAt = -1
-    } else {
-      sortOptions[sortBy as string] = sortOrder === 'desc' ? -1 : 1
-    }
-
-    // Always prioritize pinned posts
-    sortOptions.isPinned = -1
+    // Build sort object
+    const sort: any = {}
+    sort[sortBy as string] = sortOrder === 'desc' ? -1 : 1
 
     const posts = await CommunityPost.find(query)
       .populate('author', 'firstName lastName profile.avatar')
-      .populate('comments', '_id')
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(Number(limit))
+      .sort(sort)
+      .limit(Number(limit) * 1)
+      .skip((Number(page) - 1) * Number(limit))
+      .select('-__v')
 
-    const totalPosts = await CommunityPost.countDocuments(query)
+    const total = await CommunityPost.countDocuments(query)
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         posts,
         pagination: {
           currentPage: Number(page),
-          totalPages: Math.ceil(totalPosts / Number(limit)),
-          totalPosts,
-          hasNext: skip + posts.length < totalPosts,
+          totalPages: Math.ceil(total / Number(limit)),
+          totalPosts: total,
+          hasNext: Number(page) < Math.ceil(total / Number(limit)),
           hasPrev: Number(page) > 1
         }
       }
@@ -93,38 +68,23 @@ export const getCommunityPosts = async (req: Request, res: Response, next: NextF
   }
 }
 
-// @desc    Get single community post with comments
+// @desc    Get single community post
 // @route   GET /api/community/posts/:id
 // @access  Public
 export const getCommunityPost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { id } = req.params
-    const { page = 1, limit = 20 } = req.query
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid post ID'
-      })
-      return
-    }
-
-    const skip = (Number(page) - 1) * Number(limit)
 
     const post = await CommunityPost.findById(id)
       .populate('author', 'firstName lastName profile.avatar')
       .populate({
         path: 'comments',
-        match: { isApproved: true, isDeleted: false, parentComment: null },
         populate: {
           path: 'author',
           select: 'firstName lastName profile.avatar'
         },
-        options: {
-          sort: { createdAt: -1 },
-          skip,
-          limit: Number(limit)
-        }
+        match: { isApproved: true, isDeleted: false },
+        options: { sort: { createdAt: 1 } }
       })
 
     if (!post) {
@@ -139,26 +99,9 @@ export const getCommunityPost = async (req: Request, res: Response, next: NextFu
     post.views += 1
     await post.save()
 
-    // Get total comments count
-    const totalComments = await CommunityComment.countDocuments({
-      post: id,
-      isApproved: true,
-      isDeleted: false,
-      parentComment: null
-    })
-
-    res.json({
+    res.status(200).json({
       success: true,
-      data: {
-        post,
-        pagination: {
-          currentPage: Number(page),
-          totalPages: Math.ceil(totalComments / Number(limit)),
-          totalComments,
-          hasNext: skip + post.comments.length < totalComments,
-          hasPrev: Number(page) > 1
-        }
-      }
+      data: post
     })
   } catch (error) {
     next(error)
@@ -170,7 +113,19 @@ export const getCommunityPost = async (req: Request, res: Response, next: NextFu
 // @access  Private
 export const createCommunityPost = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      })
+      return
+    }
+
+    const { title, content, category, tags, images, isAnonymous } = req.body
     const userId = req.user?._id
+
     if (!userId) {
       res.status(401).json({
         success: false,
@@ -179,23 +134,14 @@ export const createCommunityPost = async (req: AuthRequest, res: Response, next:
       return
     }
 
-    const {
-      title,
-      content,
-      category,
-      tags = [],
-      images = [],
-      isAnonymous = false
-    } = req.body
-
     const post = new CommunityPost({
       author: userId,
       title,
       content,
-      category,
-      tags,
-      images,
-      isAnonymous
+      category: category || 'general',
+      tags: tags || [],
+      images: images || [],
+      isAnonymous: isAnonymous || false
     })
 
     await post.save()
@@ -206,6 +152,8 @@ export const createCommunityPost = async (req: AuthRequest, res: Response, next:
       data: post,
       message: 'Post created successfully'
     })
+
+    logger.info(`New community post created by user ${userId}: ${post._id}`)
   } catch (error) {
     next(error)
   }
@@ -216,22 +164,24 @@ export const createCommunityPost = async (req: AuthRequest, res: Response, next:
 // @access  Private
 export const updateCommunityPost = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      })
+      return
+    }
+
     const { id } = req.params
+    const { title, content, category, tags, images, isAnonymous } = req.body
     const userId = req.user?._id
-    const userRole = req.user?.role
 
     if (!userId) {
       res.status(401).json({
         success: false,
         message: 'User not authenticated'
-      })
-      return
-    }
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid post ID'
       })
       return
     }
@@ -245,8 +195,8 @@ export const updateCommunityPost = async (req: AuthRequest, res: Response, next:
       return
     }
 
-    // Check if user is author or admin/moderator
-    if (post.author.toString() !== userId && (!userRole || !['admin', 'moderator'].includes(userRole))) {
+    // Check if user is the author or admin
+    if (post.author.toString() !== userId && req.user?.role !== 'admin') {
       res.status(403).json({
         success: false,
         message: 'Not authorized to update this post'
@@ -254,31 +204,24 @@ export const updateCommunityPost = async (req: AuthRequest, res: Response, next:
       return
     }
 
-    const {
-      title,
-      content,
-      category,
-      tags,
-      images,
-      isAnonymous
-    } = req.body
-
-    // Update fields
-    if (title !== undefined) post.title = title
-    if (content !== undefined) post.content = content
-    if (category !== undefined) post.category = category
-    if (tags !== undefined) post.tags = tags
-    if (images !== undefined) post.images = images
-    if (isAnonymous !== undefined) post.isAnonymous = isAnonymous
+    // Update post
+    post.title = title || post.title
+    post.content = content || post.content
+    post.category = category || post.category
+    post.tags = tags || post.tags
+    post.images = images || post.images
+    post.isAnonymous = isAnonymous !== undefined ? isAnonymous : post.isAnonymous
 
     await post.save()
     await post.populate('author', 'firstName lastName profile.avatar')
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: post,
       message: 'Post updated successfully'
     })
+
+    logger.info(`Community post ${id} updated by user ${userId}`)
   } catch (error) {
     next(error)
   }
@@ -291,20 +234,11 @@ export const deleteCommunityPost = async (req: AuthRequest, res: Response, next:
   try {
     const { id } = req.params
     const userId = req.user?._id
-    const userRole = req.user?.role
 
     if (!userId) {
       res.status(401).json({
         success: false,
         message: 'User not authenticated'
-      })
-      return
-    }
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid post ID'
       })
       return
     }
@@ -318,8 +252,8 @@ export const deleteCommunityPost = async (req: AuthRequest, res: Response, next:
       return
     }
 
-    // Check if user is author or admin/moderator
-    if (post.author.toString() !== userId && (!userRole || !['admin', 'moderator'].includes(userRole))) {
+    // Check if user is the author or admin
+    if (post.author.toString() !== userId && req.user?.role !== 'admin') {
       res.status(403).json({
         success: false,
         message: 'Not authorized to delete this post'
@@ -330,18 +264,21 @@ export const deleteCommunityPost = async (req: AuthRequest, res: Response, next:
     // Delete associated comments
     await CommunityComment.deleteMany({ post: id })
 
+    // Delete the post
     await CommunityPost.findByIdAndDelete(id)
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: 'Post deleted successfully'
     })
+
+    logger.info(`Community post ${id} deleted by user ${userId}`)
   } catch (error) {
     next(error)
   }
 }
 
-// @desc    Like/Unlike community post
+// @desc    Toggle post like
 // @route   POST /api/community/posts/:id/like
 // @access  Private
 export const togglePostLike = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -357,14 +294,6 @@ export const togglePostLike = async (req: AuthRequest, res: Response, next: Next
       return
     }
 
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid post ID'
-      })
-      return
-    }
-
     const post = await CommunityPost.findById(id)
     if (!post) {
       res.status(404).json({
@@ -374,8 +303,8 @@ export const togglePostLike = async (req: AuthRequest, res: Response, next: Next
       return
     }
 
-    const isLiked = post.isLikedByUser(userId)
-    const isDisliked = post.isDislikedByUser(userId)
+    const isLiked = post.likes.some(like => like.toString() === userId)
+    const isDisliked = post.dislikes.some(dislike => dislike.toString() === userId)
 
     if (isLiked) {
       // Remove like
@@ -383,26 +312,27 @@ export const togglePostLike = async (req: AuthRequest, res: Response, next: Next
     } else {
       // Add like and remove dislike if exists
       post.likes.push(new mongoose.Types.ObjectId(userId))
-      post.dislikes = post.dislikes.filter(dislike => dislike.toString() !== userId)
+      if (isDisliked) {
+        post.dislikes = post.dislikes.filter(dislike => dislike.toString() !== userId)
+      }
     }
 
     await post.save()
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         isLiked: !isLiked,
         likeCount: post.likeCount,
         dislikeCount: post.dislikeCount
-      },
-      message: isLiked ? 'Post unliked' : 'Post liked'
+      }
     })
   } catch (error) {
     next(error)
   }
 }
 
-// @desc    Dislike/Undislike community post
+// @desc    Toggle post dislike
 // @route   POST /api/community/posts/:id/dislike
 // @access  Private
 export const togglePostDislike = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -418,14 +348,6 @@ export const togglePostDislike = async (req: AuthRequest, res: Response, next: N
       return
     }
 
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid post ID'
-      })
-      return
-    }
-
     const post = await CommunityPost.findById(id)
     if (!post) {
       res.status(404).json({
@@ -435,8 +357,8 @@ export const togglePostDislike = async (req: AuthRequest, res: Response, next: N
       return
     }
 
-    const isDisliked = post.isDislikedByUser(userId)
-    const isLiked = post.isLikedByUser(userId)
+    const isDisliked = post.dislikes.some(dislike => dislike.toString() === userId)
+    const isLiked = post.likes.some(like => like.toString() === userId)
 
     if (isDisliked) {
       // Remove dislike
@@ -444,19 +366,20 @@ export const togglePostDislike = async (req: AuthRequest, res: Response, next: N
     } else {
       // Add dislike and remove like if exists
       post.dislikes.push(new mongoose.Types.ObjectId(userId))
-      post.likes = post.likes.filter(like => like.toString() !== userId)
+      if (isLiked) {
+        post.likes = post.likes.filter(like => like.toString() !== userId)
+      }
     }
 
     await post.save()
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         isDisliked: !isDisliked,
         likeCount: post.likeCount,
         dislikeCount: post.dislikeCount
-      },
-      message: isDisliked ? 'Post undisliked' : 'Post disliked'
+      }
     })
   } catch (error) {
     next(error)
@@ -468,6 +391,16 @@ export const togglePostDislike = async (req: AuthRequest, res: Response, next: N
 // @access  Private
 export const reportCommunityPost = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      })
+      return
+    }
+
     const { id } = req.params
     const { reason } = req.body
     const userId = req.user?._id
@@ -476,14 +409,6 @@ export const reportCommunityPost = async (req: AuthRequest, res: Response, next:
       res.status(401).json({
         success: false,
         message: 'User not authenticated'
-      })
-      return
-    }
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid post ID'
       })
       return
     }
@@ -499,36 +424,37 @@ export const reportCommunityPost = async (req: AuthRequest, res: Response, next:
 
     post.isReported = true
     post.reportReason = reason
-
     await post.save()
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: 'Post reported successfully'
     })
+
+    logger.warn(`Community post ${id} reported by user ${userId}: ${reason}`)
   } catch (error) {
     next(error)
   }
 }
 
-// @desc    Get community post categories
+// @desc    Get community categories
 // @route   GET /api/community/categories
 // @access  Public
 export const getCommunityCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const categories = [
-      { value: 'general', label: 'General Discussion', description: 'General topics and discussions' },
-      { value: 'mental-health', label: 'Mental Health', description: 'Mental health support and discussions' },
+      { value: 'general', label: 'General', description: 'General discussions and topics' },
+      { value: 'mental-health', label: 'Mental Health', description: 'Mental health discussions and support' },
       { value: 'academic-stress', label: 'Academic Stress', description: 'Academic pressure and stress management' },
-      { value: 'relationships', label: 'Relationships', description: 'Relationship advice and support' },
-      { value: 'career', label: 'Career Guidance', description: 'Career advice and professional development' },
+      { value: 'relationships', label: 'Relationships', description: 'Relationship advice and discussions' },
+      { value: 'career', label: 'Career', description: 'Career guidance and professional development' },
       { value: 'wellness', label: 'Wellness', description: 'Health and wellness tips' },
-      { value: 'success-stories', label: 'Success Stories', description: 'Share your achievements and success stories' },
-      { value: 'questions', label: 'Questions', description: 'Ask questions and get answers' },
-      { value: 'resources', label: 'Resources', description: 'Share helpful resources and tools' }
+      { value: 'success-stories', label: 'Success Stories', description: 'Inspiring success stories and achievements' },
+      { value: 'questions', label: 'Questions', description: 'Questions and answers' },
+      { value: 'resources', label: 'Resources', description: 'Helpful resources and tools' }
     ]
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: categories
     })
@@ -537,13 +463,21 @@ export const getCommunityCategories = async (req: Request, res: Response, next: 
   }
 }
 
-// ==================== COMMENT MANAGEMENT ====================
-
-// @desc    Create new comment on a post
+// @desc    Create comment
 // @route   POST /api/community/posts/:postId/comments
 // @access  Private
 export const createComment = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      })
+      return
+    }
+
     const { postId } = req.params
     const { content, parentComment } = req.body
     const userId = req.user?._id
@@ -552,14 +486,6 @@ export const createComment = async (req: AuthRequest, res: Response, next: NextF
       res.status(401).json({
         success: false,
         message: 'User not authenticated'
-      })
-      return
-    }
-
-    if (!postId || !mongoose.Types.ObjectId.isValid(postId)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid post ID'
       })
       return
     }
@@ -574,53 +500,36 @@ export const createComment = async (req: AuthRequest, res: Response, next: NextF
       return
     }
 
-    // If replying to a comment, validate parent comment
-    if (parentComment) {
-      if (!mongoose.Types.ObjectId.isValid(parentComment)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid parent comment ID'
-        })
-        return
-      }
-
-      const parentCommentDoc = await CommunityComment.findById(parentComment)
-      if (!parentCommentDoc || parentCommentDoc.post.toString() !== postId) {
-        res.status(404).json({
-          success: false,
-          message: 'Parent comment not found or does not belong to this post'
-        })
-        return
-      }
-    }
-
     const comment = new CommunityComment({
       post: postId,
       author: userId,
       content,
-      parentComment: parentComment || null
+      parentComment: parentComment || undefined
     })
 
     await comment.save()
     await comment.populate('author', 'firstName lastName profile.avatar')
 
-    // If this is a reply, add it to parent comment's replies
-    if (parentComment) {
-      await CommunityComment.findByIdAndUpdate(parentComment, {
-        $push: { replies: comment._id }
-      })
-    }
+    // Add comment to post
+    post.comments.push(comment._id as any)
+    await post.save()
 
-    // Update post comment count
-    await CommunityPost.findByIdAndUpdate(postId, {
-      $inc: { commentCount: 1 }
-    })
+    // If this is a reply, add to parent comment
+    if (parentComment) {
+      const parent = await CommunityComment.findById(parentComment)
+      if (parent) {
+        parent.replies.push(comment._id as any)
+        await parent.save()
+      }
+    }
 
     res.status(201).json({
       success: true,
       data: comment,
       message: 'Comment created successfully'
     })
+
+    logger.info(`New comment created by user ${userId} on post ${postId}`)
   } catch (error) {
     next(error)
   }
@@ -631,23 +540,24 @@ export const createComment = async (req: AuthRequest, res: Response, next: NextF
 // @access  Private
 export const updateComment = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      })
+      return
+    }
+
     const { id } = req.params
     const { content } = req.body
     const userId = req.user?._id
-    const userRole = req.user?.role
 
     if (!userId) {
       res.status(401).json({
         success: false,
         message: 'User not authenticated'
-      })
-      return
-    }
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid comment ID'
       })
       return
     }
@@ -661,8 +571,8 @@ export const updateComment = async (req: AuthRequest, res: Response, next: NextF
       return
     }
 
-    // Check if user is author or admin/moderator
-    if (comment.author.toString() !== userId && (!userRole || !['admin', 'moderator'].includes(userRole))) {
+    // Check if user is the author or admin
+    if (comment.author.toString() !== userId && req.user?.role !== 'admin') {
       res.status(403).json({
         success: false,
         message: 'Not authorized to update this comment'
@@ -674,11 +584,13 @@ export const updateComment = async (req: AuthRequest, res: Response, next: NextF
     await comment.save()
     await comment.populate('author', 'firstName lastName profile.avatar')
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: comment,
       message: 'Comment updated successfully'
     })
+
+    logger.info(`Comment ${id} updated by user ${userId}`)
   } catch (error) {
     next(error)
   }
@@ -691,20 +603,11 @@ export const deleteComment = async (req: AuthRequest, res: Response, next: NextF
   try {
     const { id } = req.params
     const userId = req.user?._id
-    const userRole = req.user?.role
 
     if (!userId) {
       res.status(401).json({
         success: false,
         message: 'User not authenticated'
-      })
-      return
-    }
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid comment ID'
       })
       return
     }
@@ -718,8 +621,8 @@ export const deleteComment = async (req: AuthRequest, res: Response, next: NextF
       return
     }
 
-    // Check if user is author or admin/moderator
-    if (comment.author.toString() !== userId && (!userRole || !['admin', 'moderator'].includes(userRole))) {
+    // Check if user is the author or admin
+    if (comment.author.toString() !== userId && req.user?.role !== 'admin') {
       res.status(403).json({
         success: false,
         message: 'Not authorized to delete this comment'
@@ -727,26 +630,23 @@ export const deleteComment = async (req: AuthRequest, res: Response, next: NextF
       return
     }
 
-    // Soft delete the comment
+    // Soft delete - mark as deleted
     comment.isDeleted = true
     comment.deletedAt = new Date()
     await comment.save()
 
-    // Update post comment count
-    await CommunityPost.findByIdAndUpdate(comment.post, {
-      $inc: { commentCount: -1 }
-    })
-
-    res.json({
+    res.status(200).json({
       success: true,
       message: 'Comment deleted successfully'
     })
+
+    logger.info(`Comment ${id} deleted by user ${userId}`)
   } catch (error) {
     next(error)
   }
 }
 
-// @desc    Like/Unlike comment
+// @desc    Toggle comment like
 // @route   POST /api/community/comments/:id/like
 // @access  Private
 export const toggleCommentLike = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -762,14 +662,6 @@ export const toggleCommentLike = async (req: AuthRequest, res: Response, next: N
       return
     }
 
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid comment ID'
-      })
-      return
-    }
-
     const comment = await CommunityComment.findById(id)
     if (!comment) {
       res.status(404).json({
@@ -779,8 +671,8 @@ export const toggleCommentLike = async (req: AuthRequest, res: Response, next: N
       return
     }
 
-    const isLiked = comment.isLikedByUser(userId)
-    const isDisliked = comment.isDislikedByUser(userId)
+    const isLiked = comment.likes.some(like => like.toString() === userId)
+    const isDisliked = comment.dislikes.some(dislike => dislike.toString() === userId)
 
     if (isLiked) {
       // Remove like
@@ -788,26 +680,27 @@ export const toggleCommentLike = async (req: AuthRequest, res: Response, next: N
     } else {
       // Add like and remove dislike if exists
       comment.likes.push(new mongoose.Types.ObjectId(userId))
-      comment.dislikes = comment.dislikes.filter(dislike => dislike.toString() !== userId)
+      if (isDisliked) {
+        comment.dislikes = comment.dislikes.filter(dislike => dislike.toString() !== userId)
+      }
     }
 
     await comment.save()
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         isLiked: !isLiked,
         likeCount: comment.likeCount,
         dislikeCount: comment.dislikeCount
-      },
-      message: isLiked ? 'Comment unliked' : 'Comment liked'
+      }
     })
   } catch (error) {
     next(error)
   }
 }
 
-// @desc    Dislike/Undislike comment
+// @desc    Toggle comment dislike
 // @route   POST /api/community/comments/:id/dislike
 // @access  Private
 export const toggleCommentDislike = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -823,14 +716,6 @@ export const toggleCommentDislike = async (req: AuthRequest, res: Response, next
       return
     }
 
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid comment ID'
-      })
-      return
-    }
-
     const comment = await CommunityComment.findById(id)
     if (!comment) {
       res.status(404).json({
@@ -840,8 +725,8 @@ export const toggleCommentDislike = async (req: AuthRequest, res: Response, next
       return
     }
 
-    const isDisliked = comment.isDislikedByUser(userId)
-    const isLiked = comment.isLikedByUser(userId)
+    const isDisliked = comment.dislikes.some(dislike => dislike.toString() === userId)
+    const isLiked = comment.likes.some(like => like.toString() === userId)
 
     if (isDisliked) {
       // Remove dislike
@@ -849,19 +734,20 @@ export const toggleCommentDislike = async (req: AuthRequest, res: Response, next
     } else {
       // Add dislike and remove like if exists
       comment.dislikes.push(new mongoose.Types.ObjectId(userId))
-      comment.likes = comment.likes.filter(like => like.toString() !== userId)
+      if (isLiked) {
+        comment.likes = comment.likes.filter(like => like.toString() !== userId)
+      }
     }
 
     await comment.save()
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         isDisliked: !isDisliked,
         likeCount: comment.likeCount,
         dislikeCount: comment.dislikeCount
-      },
-      message: isDisliked ? 'Comment undisliked' : 'Comment disliked'
+      }
     })
   } catch (error) {
     next(error)
@@ -873,6 +759,16 @@ export const toggleCommentDislike = async (req: AuthRequest, res: Response, next
 // @access  Private
 export const reportComment = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      })
+      return
+    }
+
     const { id } = req.params
     const { reason } = req.body
     const userId = req.user?._id
@@ -881,14 +777,6 @@ export const reportComment = async (req: AuthRequest, res: Response, next: NextF
       res.status(401).json({
         success: false,
         message: 'User not authenticated'
-      })
-      return
-    }
-
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid comment ID'
       })
       return
     }
@@ -904,13 +792,14 @@ export const reportComment = async (req: AuthRequest, res: Response, next: NextF
 
     comment.isReported = true
     comment.reportReason = reason
-
     await comment.save()
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: 'Comment reported successfully'
     })
+
+    logger.warn(`Comment ${id} reported by user ${userId}: ${reason}`)
   } catch (error) {
     next(error)
   }
@@ -924,50 +813,31 @@ export const getCommentReplies = async (req: Request, res: Response, next: NextF
     const { id } = req.params
     const { page = 1, limit = 10 } = req.query
 
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid comment ID'
-      })
-      return
-    }
-
-    const skip = (Number(page) - 1) * Number(limit)
-
-    const comment = await CommunityComment.findById(id)
-    if (!comment) {
-      res.status(404).json({
-        success: false,
-        message: 'Comment not found'
-      })
-      return
-    }
-
-    const replies = await CommunityComment.find({
-      parentComment: id,
-      isApproved: true,
-      isDeleted: false
+    const replies = await CommunityComment.find({ 
+      parentComment: id, 
+      isApproved: true, 
+      isDeleted: false 
     })
       .populate('author', 'firstName lastName profile.avatar')
       .sort({ createdAt: 1 })
-      .skip(skip)
-      .limit(Number(limit))
+      .limit(Number(limit) * 1)
+      .skip((Number(page) - 1) * Number(limit))
 
-    const totalReplies = await CommunityComment.countDocuments({
-      parentComment: id,
-      isApproved: true,
-      isDeleted: false
+    const total = await CommunityComment.countDocuments({ 
+      parentComment: id, 
+      isApproved: true, 
+      isDeleted: false 
     })
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         replies,
         pagination: {
           currentPage: Number(page),
-          totalPages: Math.ceil(totalReplies / Number(limit)),
-          totalReplies,
-          hasNext: skip + replies.length < totalReplies,
+          totalPages: Math.ceil(total / Number(limit)),
+          totalReplies: total,
+          hasNext: Number(page) < Math.ceil(total / Number(limit)),
           hasPrev: Number(page) > 1
         }
       }

@@ -70,6 +70,7 @@ export interface AuthState {
 export interface LoginCredentials {
   email: string
   password: string
+  userType?: 'student' | 'counselor' | 'admin' | 'moderator'
   rememberMe?: boolean
 }
 
@@ -166,7 +167,7 @@ export interface CommunityPost {
   isLocked: boolean
   likes: string[]
   dislikes: string[]
-  comments: string[]
+  comments: string[] | CommunityComment[] // Can be IDs or populated comments
   views: number
   shares: number
   isReported: boolean
@@ -193,7 +194,7 @@ export interface CommunityComment {
   }
   content: string
   parentComment?: string
-  replies: string[]
+  replies: string[] | CommunityComment[] // Can be IDs or populated replies
   likes: string[]
   dislikes: string[]
   isEdited: boolean

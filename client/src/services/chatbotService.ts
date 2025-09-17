@@ -1,15 +1,5 @@
-import axios from 'axios'
 import { ApiResponse } from '@types'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
-
-// Create axios instance
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
+import api from './api'
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
@@ -23,6 +13,17 @@ api.interceptors.request.use(
         }
       } catch (error) {
         console.error('Error parsing auth token:', error)
+        // Fallback: try to get token directly from localStorage
+        const directToken = localStorage.getItem('token')
+        if (directToken) {
+          config.headers.Authorization = `Bearer ${directToken}`
+        }
+      }
+    } else {
+      // Fallback: try to get token directly from localStorage
+      const directToken = localStorage.getItem('token')
+      if (directToken) {
+        config.headers.Authorization = `Bearer ${directToken}`
       }
     }
     return config
@@ -104,6 +105,20 @@ export const chatbotService = {
   // Get wellness tips
   getWellnessTips: async (): Promise<ApiResponse<{ tips: string[], timestamp: string }>> => {
     const response = await api.get('/chatbot/wellness-tips')
+    return response.data
+  },
+
+  // Track user mood
+  trackMood: async (mood: number, notes?: string, sessionId?: string): Promise<ApiResponse<{
+    mood: number
+    timestamp: string
+    message: string
+  }>> => {
+    const response = await api.post('/chatbot/mood', {
+      mood,
+      notes,
+      sessionId
+    })
     return response.data
   }
 

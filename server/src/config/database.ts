@@ -3,7 +3,10 @@ import logger from '@utils/logger'
 
 const connectDB = async (): Promise<void> => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://vrajpatel402126_db_user:sih2025@cluster0.ksyr7z7.mongodb.net/'
+    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://gauravkhandelwal205_db_user:gaurav@cluster0.urnv9wg.mongodb.net/test'
+    
+    console.log('🔗 Connecting to MongoDB with URI:', mongoURI)
+    console.log('📊 Database name:', mongoURI.split('/').pop() || 'default')
     
     const conn = await mongoose.connect(mongoURI, {
       // Remove deprecated options

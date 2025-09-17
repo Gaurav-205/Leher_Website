@@ -5,7 +5,7 @@ import { ArrowRight, Heart, Shield, Users, MessageCircle } from 'lucide-react'
 const CTASection = () => {
   const benefits = [
     '24/7 AI-powered mental health support',
-    'Confidential counselor appointments',
+    'Professional counselor guidance',
     'Multi-language support (Hindi, English, Regional)',
     'Peer-to-peer support communities',
     'Institution-specific customization',

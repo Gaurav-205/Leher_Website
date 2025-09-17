@@ -35,11 +35,32 @@ export const sendMessage = async (req: AuthRequest, res: Response, next: NextFun
       return
     }
 
-    // Check for crisis keywords
-    const crisisKeywords = ['suicide', 'kill myself', 'end it all', 'not worth living', 'want to die', 'self harm', 'hurt myself']
+    // Enhanced crisis detection following comprehensive mental health guidelines
+    const crisisKeywords = [
+      'suicide', 'kill myself', 'end it all', 'not worth living', 'want to die', 
+      'self harm', 'hurt myself', 'end my life', 'not worth it', 'better off dead',
+      'suicidal', 'self-harm', 'cutting', 'overdose', 'poison', 'jump off',
+      'hang myself', 'shoot myself', 'drown myself', 'burn myself',
+      'no point living', 'world without me', 'everyone better off',
+      'final solution', 'permanent solution', 'escape pain',
+      'end the pain', 'stop the pain', 'can\'t take it anymore',
+      'give up', 'lose hope', 'hopeless', 'helpless',
+      'want to disappear', 'disappear forever', 'never wake up',
+      'sleep forever', 'end everything', 'no way out',
+      'trapped', 'no escape', 'can\'t go on', 'done with life',
+      'hate living', 'life is pointless', 'nothing matters',
+      'wish i was dead', 'should be dead', 'deserve to die'
+    ]
+    
+    // More sophisticated crisis detection
+    const lowerMessage = message.toLowerCase()
     const isCrisis = crisisKeywords.some(keyword => 
-      message.toLowerCase().includes(keyword.toLowerCase())
-    )
+      lowerMessage.includes(keyword.toLowerCase())
+    ) || 
+    // Check for patterns that might indicate crisis
+    (lowerMessage.includes('want to') && (lowerMessage.includes('die') || lowerMessage.includes('end'))) ||
+    (lowerMessage.includes('can\'t') && (lowerMessage.includes('anymore') || lowerMessage.includes('take it'))) ||
+    (lowerMessage.includes('no point') && lowerMessage.includes('living'))
 
     let chatSession
     let sessionIdToUse = sessionId
@@ -61,6 +82,8 @@ export const sendMessage = async (req: AuthRequest, res: Response, next: NextFun
         messages: [],
         isActive: true
       })
+      // Save the new session to ensure createdAt is set
+      await chatSession.save()
     }
 
     // Add user message to chat
@@ -76,11 +99,24 @@ export const sendMessage = async (req: AuthRequest, res: Response, next: NextFun
     const recentMessages = chatSession.messages.slice(-10) // Get last 10 messages for context
     const context = recentMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')
 
+    // Enhanced context with mood and conversation patterns
+    const sessionDuration = chatSession.createdAt 
+      ? Date.now() - new Date(chatSession.createdAt).getTime() 
+      : 0
+    
+    const enhancedContext = {
+      recentMessages: context,
+      messageCount: chatSession.messages.length,
+      sessionDuration,
+      isCrisis,
+      userMood: message.includes('feeling') ? 'mood_mentioned' : 'general'
+    }
+
     if (isCrisis) {
       aiResponse = await geminiService.generateCrisisResponse(message)
       logger.warn(`Crisis message detected from user ${userId}: ${message}`)
     } else {
-      aiResponse = await geminiService.generateResponse(message, context)
+      aiResponse = await geminiService.generateResponse(message, JSON.stringify(enhancedContext))
     }
 
     // Add AI response to chat
@@ -272,6 +308,60 @@ export const getWellnessTips = async (req: AuthRequest, res: Response, next: Nex
     })
   } catch (error) {
     next(error)
+  }
+}
+
+// @desc    Track user mood
+// @route   POST /api/chatbot/mood
+// @access  Private
+export const trackMood = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { mood, notes, sessionId } = req.body
+    const userId = req.user?._id
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      })
+      return
+    }
+
+    // Validate mood (1-5 scale)
+    if (!mood || mood < 1 || mood > 5) {
+      res.status(400).json({
+        success: false,
+        message: 'Mood must be between 1 and 5'
+      })
+      return
+    }
+
+    // Store mood data (you can extend this to save to a separate Mood collection)
+    const moodData = {
+      userId,
+      mood,
+      notes: notes || '',
+      sessionId: sessionId || null,
+      timestamp: new Date()
+    }
+
+    // For now, we'll just return success. In a full implementation, you'd save this to a database
+    logger.info(`Mood tracked for user ${userId}: ${mood}/5`)
+
+    res.json({
+      success: true,
+      data: {
+        mood: moodData.mood,
+        timestamp: moodData.timestamp,
+        message: 'Mood tracked successfully'
+      }
+    })
+  } catch (error) {
+    console.error('Error tracking mood:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to track mood'
+    })
   }
 }
 

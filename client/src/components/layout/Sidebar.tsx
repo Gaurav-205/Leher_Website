@@ -3,13 +3,13 @@ import { useAuthStore } from '@store/authStore'
 import { 
   Home,
   MessageCircle,
-  Calendar,
   Users,
   BookOpen,
   User,
   Settings,
   Shield,
-  X
+  X,
+  Heart
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -22,17 +22,25 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const location = useLocation()
 
   const navigation = [
-    { name: 'Home', href: '/app', icon: Home },
+    { name: 'Home', href: '/app', icon: Heart },
     { name: 'AI Chatbot', href: '/app/chatbot', icon: MessageCircle },
-    { name: 'Appointments', href: '/app/appointments', icon: Calendar },
     { name: 'Community', href: '/app/community', icon: Users },
     { name: 'Resources', href: '/app/resources', icon: BookOpen },
     { name: 'Profile', href: '/app/profile', icon: User },
     { name: 'Settings', href: '/app/settings', icon: Settings },
   ]
 
+  // Add role-specific navigation
   if (user?.role === 'admin') {
     navigation.push({ name: 'Admin Dashboard', href: '/admin', icon: Shield })
+  }
+
+  if (user?.role === 'counselor') {
+    navigation.push({ name: 'Counselor Dashboard', href: '/counselor', icon: Shield })
+  }
+
+  if (user?.role === 'moderator') {
+    navigation.push({ name: 'Moderator Dashboard', href: '/moderator', icon: Shield })
   }
 
   const isActive = (href: string) => {

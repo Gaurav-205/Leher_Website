@@ -1,15 +1,7 @@
-import axios from 'axios'
 import { ApiResponse } from '@types'
+import api from './api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
-
-// Create axios instance
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
@@ -53,7 +45,7 @@ export interface CommunityPost {
   isLocked: boolean
   likes: string[]
   dislikes: string[]
-  comments: string[]
+  comments: string[] | CommunityComment[] // Can be IDs or populated comments
   views: number
   shares: number
   isReported: boolean
@@ -80,7 +72,7 @@ export interface CommunityComment {
   }
   content: string
   parentComment?: string
-  replies: string[]
+  replies: string[] | CommunityComment[] // Can be IDs or populated replies
   likes: string[]
   dislikes: string[]
   isEdited: boolean
@@ -169,16 +161,7 @@ export const communityService = {
     }
   },
 
-  getPost: async (id: string, params?: GetCommentsParams): Promise<ApiResponse<{
-    post: CommunityPost
-    pagination: {
-      currentPage: number
-      totalPages: number
-      totalComments: number
-      hasNext: boolean
-      hasPrev: boolean
-    }
-  }>> => {
+  getPost: async (id: string, params?: GetCommentsParams): Promise<ApiResponse<CommunityPost>> => {
     const response = await api.get(`/community/posts/${id}`, { params })
     return response.data
   },

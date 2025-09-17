@@ -21,12 +21,11 @@ import logger from '@utils/logger'
 import authRoutes from '@routes/auth'
 import userRoutes from '@routes/users'
 import chatbotRoutes from '@routes/chatbot'
-import appointmentRoutes from '@routes/appointments'
-import counselorRoutes from '@routes/counselors'
 import communityRoutes from '@routes/community'
 import resourceRoutes from '@routes/resources'
 import adminRoutes from '@routes/admin'
 import institutionRoutes from '@routes/institutions'
+import appointmentRoutes from '@routes/appointments'
 
 const app = express()
 const server = createServer(app)
@@ -122,10 +121,9 @@ if (isDevelopment) {
 app.use('/api/auth', authLimiter, authRoutes)
 app.use('/api/users', userRoutes)
 app.use('/api/chatbot', chatbotRoutes)
-app.use('/api/appointments', appointmentRoutes)
-app.use('/api/counselors', counselorRoutes)
 app.use('/api/community', communityRoutes)
 app.use('/api/resources', resourceRoutes)
+app.use('/api/appointments', appointmentRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/institutions', institutionRoutes)
 

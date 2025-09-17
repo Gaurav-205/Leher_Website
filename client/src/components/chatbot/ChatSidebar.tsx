@@ -10,7 +10,9 @@ import {
   Settings,
   Bot,
   User,
-  Clock
+  Clock,
+  Heart,
+  Sparkles
 } from 'lucide-react'
 import { chatbotService, ChatSession } from '@services/chatbotService'
 import toast from 'react-hot-toast'
@@ -33,10 +35,22 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
     setLoading(true)
     try {
       const response = await chatbotService.getChatSessions(1, 20)
-      setSessions(response.data.sessions)
-    } catch (error) {
+      if (response.success) {
+        setSessions(response.data.sessions)
+      } else {
+        throw new Error(response.message || 'Failed to load sessions')
+      }
+    } catch (error: any) {
       console.error('Error loading sessions:', error)
-      toast.error('Failed to load chat history')
+      
+      // More specific error handling
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please log in again.')
+      } else if (error.response?.status >= 500) {
+        toast.error('Server error. Please try again later.')
+      } else {
+        toast.error('Failed to load chat history')
+      }
     } finally {
       setLoading(false)
     }
@@ -71,15 +85,31 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
   const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await chatbotService.endChatSession(sessionId)
-      setSessions(prev => prev.filter(s => s.sessionId !== sessionId))
-      if (activeSessionId === sessionId) {
-        onSessionSelect(null)
+      const response = await chatbotService.endChatSession(sessionId)
+      if (response.success) {
+        setSessions(prev => prev.filter(s => s.sessionId !== sessionId))
+        if (activeSessionId === sessionId) {
+          onSessionSelect(null)
+        }
+        toast.success('Chat session deleted')
+      } else {
+        throw new Error(response.message || 'Failed to delete session')
       }
-      toast.success('Chat session deleted')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting session:', error)
-      toast.error('Failed to delete session')
+      
+      // More specific error handling
+      if (error.response?.status === 401) {
+        toast.error('Session expired. Please log in again.')
+      } else if (error.response?.status === 404) {
+        toast.error('Session not found')
+        // Remove from local state if not found on server
+        setSessions(prev => prev.filter(s => s.sessionId !== sessionId))
+      } else if (error.response?.status >= 500) {
+        toast.error('Server error. Please try again later.')
+      } else {
+        toast.error('Failed to delete session')
+      }
     }
   }
 
@@ -117,31 +147,34 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
             animate={{ x: 0 }}
             exit={{ x: -320 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed left-0 top-0 h-full w-80 bg-white border-r border-gray-200 z-50 flex flex-col shadow-xl lg:relative lg:translate-x-0 lg:shadow-none"
+            className="fixed left-0 top-0 h-full w-80 bg-white border-r border-gray-200 z-50 flex flex-col shadow-lg lg:relative lg:translate-x-0 lg:shadow-none"
           >
             {/* Header */}
-            <div className="flex items-center p-4 border-b border-gray-200">
+            <div className="flex items-center p-6 border-b border-gray-200">
               <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-white" />
+                <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Heart className="h-5 w-5 text-white" />
                 </div>
-                <h2 className="text-lg font-semibold text-gray-900">Chat History</h2>
+                <div>
+                  <h2 className="text-xl font-light text-gray-900">Chat History</h2>
+                  <p className="text-lg text-gray-600">Your conversations</p>
+                </div>
               </div>
             </div>
 
             {/* New Chat Button */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-6 border-b border-gray-200">
               <button
                 onClick={handleNewChat}
-                className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
+                className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
               >
                 <Plus className="h-4 w-4" />
-                <span>New Chat</span>
+                <span className="font-medium">New Chat</span>
               </button>
             </div>
 
             {/* Search */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-6 border-b border-gray-200">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -149,7 +182,7 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
                   placeholder="Search conversations..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                 />
               </div>
             </div>
@@ -158,36 +191,39 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
             <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center h-32">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 </div>
               ) : filteredSessions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-32 text-gray-500">
-                  <MessageSquare className="h-8 w-8 mb-2" />
-                  <p className="text-sm">
+                <div className="flex flex-col items-center justify-center h-32 text-gray-500 p-6">
+                  <div className="h-12 w-12 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+                    <MessageSquare className="h-6 w-6" />
+                  </div>
+                  <p className="text-sm font-medium">
                     {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {searchQuery ? 'Try a different search term' : 'Start a new chat to begin'}
                   </p>
                 </div>
               ) : (
-                <div className="p-2">
+                <div className="p-3">
                   {filteredSessions.map((session) => (
-                    <motion.div
+                    <div
                       key={session.sessionId}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`group relative p-3 rounded-lg cursor-pointer transition-colors duration-200 mb-2 ${
+                      className={`group relative p-4 rounded-lg cursor-pointer transition-colors duration-200 mb-2 ${
                         activeSessionId === session.sessionId
-                          ? 'bg-primary-50 border border-primary-200'
+                          ? 'bg-blue-50 border border-blue-200'
                           : 'hover:bg-gray-50'
                       }`}
                       onClick={() => handleSessionSelect(session.sessionId)}
                     >
                       <div className="flex items-start space-x-3">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                           activeSessionId === session.sessionId
-                            ? 'bg-primary-600'
+                            ? 'bg-blue-600'
                             : 'bg-gray-100'
                         }`}>
-                          <MessageSquare className={`h-4 w-4 ${
+                          <MessageSquare className={`h-5 w-5 ${
                             activeSessionId === session.sessionId
                               ? 'text-white'
                               : 'text-gray-600'
@@ -195,28 +231,23 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className={`text-sm font-medium truncate ${
+                          <div className="flex items-center justify-between mb-2">
+                            <p className={`text-sm font-semibold truncate ${
                               activeSessionId === session.sessionId
-                                ? 'text-primary-900'
+                                ? 'text-blue-900'
                                 : 'text-gray-900'
                             }`}>
                               {session.lastMessage.substring(0, 50)}
                               {session.lastMessage.length > 50 ? '...' : ''}
                             </p>
                             <div className="flex items-center space-x-1 ml-2">
-                              <span className={`text-xs ${
+                              <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                                 activeSessionId === session.sessionId
-                                  ? 'text-primary-600'
-                                  : 'text-gray-500'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-gray-100 text-gray-600'
                               }`}>
                                 {session.messageCount}
                               </span>
-                              <MessageSquare className={`h-3 w-3 ${
-                                activeSessionId === session.sessionId
-                                  ? 'text-primary-500'
-                                  : 'text-gray-400'
-                              }`} />
                             </div>
                           </div>
                           
@@ -232,28 +263,28 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <button
                             onClick={(e) => handleDeleteSession(session.sessionId, e)}
-                            className="p-1 hover:bg-red-100 rounded-full transition-colors duration-200"
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors duration-200"
                             title="Delete conversation"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </button>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gray-200">
-              <div className="flex items-center space-x-3 text-sm text-gray-600">
-                <div className="h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4" />
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex items-center space-x-3 text-sm">
+                <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <Bot className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-medium">Lehar AI</p>
-                  <p className="text-xs text-gray-500">Mental Health Companion</p>
+                  <p className="font-medium text-gray-900">Lehar AI</p>
+                  <p className="text-sm text-gray-600">Mental Health Companion</p>
                 </div>
               </div>
             </div>

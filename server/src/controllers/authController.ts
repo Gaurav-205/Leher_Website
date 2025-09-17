@@ -94,7 +94,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       return
     }
 
-    const { email, password } = req.body
+    const { email, password, userType } = req.body
 
     // Check for user
     const user = await User.findOne({ email }).select('+password')
@@ -114,6 +114,16 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
         success: false,
         message: 'Invalid email or password',
         error: 'INVALID_CREDENTIALS'
+      })
+      return
+    }
+
+    // Check if user type matches (if provided)
+    if (userType && user.role !== userType) {
+      res.status(403).json({
+        success: false,
+        message: `Access denied. This account is for ${user.role}s, not ${userType}s.`,
+        error: 'INVALID_USER_TYPE'
       })
       return
     }

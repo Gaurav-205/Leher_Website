@@ -65,7 +65,11 @@ const loginValidation = [
     .notEmpty()
     .withMessage('Password is required')
     .isLength({ min: 1 })
-    .withMessage('Password cannot be empty')
+    .withMessage('Password cannot be empty'),
+  body('userType')
+    .optional()
+    .isIn(['student', 'counselor', 'admin', 'moderator'])
+    .withMessage('Please select a valid user type')
 ]
 
 const changePasswordValidation = [

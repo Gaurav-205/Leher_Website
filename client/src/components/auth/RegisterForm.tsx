@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@store/authStore'
-import { Eye, EyeOff, Mail, Lock, User, Building, AlertCircle, Check } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, Building, AlertCircle, Check, Heart, Sparkles, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const RegisterForm = () => {
@@ -149,17 +149,17 @@ const RegisterForm = () => {
       transition={{ duration: 0.6 }}
       className="w-full max-w-md mx-auto"
     >
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="h-16 w-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="h-8 w-8 text-primary-600" />
+          <div className="h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <User className="h-6 w-6 text-white" />
           </div>
-          <h1 className="text-2xl font-prata font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-light text-gray-900 mb-2">
             Create Account
           </h1>
-          <p className="text-gray-600">
-            Join thousands of students on their wellness journey with Lehar
+          <p className="text-lg text-gray-600">
+            Join thousands of students on their wellness journey
           </p>
         </div>
 
@@ -171,24 +171,19 @@ const RegisterForm = () => {
               <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
                 First Name
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className={`input-field pl-10 ${errors.firstName ? 'border-red-300 focus:ring-red-500' : ''}`}
-                  placeholder="First name"
-                  aria-describedby={errors.firstName ? 'firstName-error' : undefined}
-                  aria-invalid={errors.firstName ? 'true' : 'false'}
-                />
-              </div>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
+                  errors.firstName ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 hover:border-gray-400'
+                }`}
+                placeholder="First name"
+              />
               {errors.firstName && (
-                <div id="firstName-error" className="flex items-center mt-1 text-sm text-red-600" role="alert">
+                <div className="flex items-center mt-2 text-sm text-red-600">
                   <AlertCircle className="h-4 w-4 mr-1" />
                   {errors.firstName}
                 </div>
@@ -205,11 +200,13 @@ const RegisterForm = () => {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                className={`input-field ${errors.lastName ? 'border-red-300 focus:ring-red-500' : ''}`}
+                className={`w-full px-4 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
+                  errors.lastName ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 hover:border-gray-400'
+                }`}
                 placeholder="Last name"
               />
               {errors.lastName && (
-                <div className="flex items-center mt-1 text-sm text-red-600">
+                <div className="flex items-center mt-2 text-sm text-red-600">
                   <AlertCircle className="h-4 w-4 mr-1" />
                   {errors.lastName}
                 </div>
@@ -232,12 +229,14 @@ const RegisterForm = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`input-field pl-10 ${errors.email ? 'border-red-300 focus:ring-red-500' : ''}`}
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
+                  errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 hover:border-gray-400'
+                }`}
                 placeholder="Enter your email"
               />
             </div>
             {errors.email && (
-              <div className="flex items-center mt-1 text-sm text-red-600">
+              <div className="flex items-center mt-2 text-sm text-red-600">
                 <AlertCircle className="h-4 w-4 mr-1" />
                 {errors.email}
               </div>
@@ -258,7 +257,9 @@ const RegisterForm = () => {
                 name="educationLevel"
                 value={formData.educationLevel}
                 onChange={handleChange}
-                className={`input-field pl-10 ${errors.educationLevel ? 'border-red-300 focus:ring-red-500' : ''}`}
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
+                  errors.educationLevel ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 hover:border-gray-400'
+                }`}
               >
                 <option value="">Select your education level</option>
                 <option value="high-school">High School (10th/12th)</option>
@@ -270,7 +271,7 @@ const RegisterForm = () => {
               </select>
             </div>
             {errors.educationLevel && (
-              <div className="flex items-center mt-1 text-sm text-red-600">
+              <div className="flex items-center mt-2 text-sm text-red-600">
                 <AlertCircle className="h-4 w-4 mr-1" />
                 {errors.educationLevel}
               </div>
@@ -292,13 +293,15 @@ const RegisterForm = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-300 focus:ring-red-500' : ''}`}
+                className={`w-full pl-10 pr-12 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
+                  errors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 hover:border-gray-400'
+                }`}
                 placeholder="Create a password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center hover:bg-gray-100 rounded-r-lg transition-colors duration-200"
               >
                 {showPassword ? (
                   <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
@@ -310,15 +313,15 @@ const RegisterForm = () => {
             
             {/* Password Strength */}
             {formData.password && (
-              <div className="mt-2">
+              <div className="mt-3">
                 <div className="flex items-center space-x-2">
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div
-                      className={`h-2 rounded-full transition-all duration-300 ${strengthColors[strength - 1] || 'bg-gray-300'}`}
+                      className={`h-2 rounded-full transition-all duration-200 ${strengthColors[strength - 1] || 'bg-gray-300'}`}
                       style={{ width: `${(strength / 5) * 100}%` }}
                     />
                   </div>
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-gray-600 font-medium">
                     {strength > 0 ? strengthLabels[strength - 1] : ''}
                   </span>
                 </div>
@@ -326,7 +329,7 @@ const RegisterForm = () => {
             )}
             
             {errors.password && (
-              <div className="flex items-center mt-1 text-sm text-red-600">
+              <div className="flex items-center mt-2 text-sm text-red-600">
                 <AlertCircle className="h-4 w-4 mr-1" />
                 {errors.password}
               </div>
@@ -348,13 +351,15 @@ const RegisterForm = () => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={`input-field pl-10 pr-10 ${errors.confirmPassword ? 'border-red-300 focus:ring-red-500' : ''}`}
+                className={`w-full pl-10 pr-12 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
+                  errors.confirmPassword ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 hover:border-gray-400'
+                }`}
                 placeholder="Confirm your password"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center hover:bg-gray-100 rounded-r-lg transition-colors duration-200"
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
@@ -364,7 +369,7 @@ const RegisterForm = () => {
               </button>
             </div>
             {errors.confirmPassword && (
-              <div className="flex items-center mt-1 text-sm text-red-600">
+              <div className="flex items-center mt-2 text-sm text-red-600">
                 <AlertCircle className="h-4 w-4 mr-1" />
                 {errors.confirmPassword}
               </div>
@@ -381,24 +386,24 @@ const RegisterForm = () => {
                   type="checkbox"
                   checked={formData.agreeToTerms}
                   onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors duration-200"
                 />
               </div>
               <div className="ml-3 text-sm">
-                <label htmlFor="agreeToTerms" className="text-gray-700">
+                <label htmlFor="agreeToTerms" className="text-gray-700 font-medium">
                   I agree to the{' '}
-                  <Link to="/terms" className="text-primary-600 hover:text-primary-700 font-medium">
+                  <Link to="/terms" className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200">
                     Terms of Service
                   </Link>{' '}
                   and{' '}
-                  <Link to="/privacy" className="text-primary-600 hover:text-primary-700 font-medium">
+                  <Link to="/privacy" className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200">
                     Privacy Policy
                   </Link>
                 </label>
               </div>
             </div>
             {errors.agreeToTerms && (
-              <div className="flex items-center mt-1 text-sm text-red-600">
+              <div className="flex items-center mt-2 text-sm text-red-600">
                 <AlertCircle className="h-4 w-4 mr-1" />
                 {errors.agreeToTerms}
               </div>
@@ -409,7 +414,7 @@ const RegisterForm = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full btn-primary py-3 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full py-3 px-6 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center"
           >
             {isLoading ? (
               <>
@@ -426,12 +431,12 @@ const RegisterForm = () => {
         </form>
 
         {/* Sign In Link */}
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
             <Link
               to="/auth/login"
-              className="font-medium text-primary-600 hover:text-primary-700"
+              className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200"
             >
               Sign in
             </Link>

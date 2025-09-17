@@ -51,7 +51,7 @@ Configure the following variables in `server/.env`:
 
 ```env
 # Database
-MONGODB_URI=mongodb://localhost:27017/mental-health-platform
+MONGODB_URI=mongodb+srv://gauravkhandelwal205_db_user:gaurav@cluster0.urnv9wg.mongodb.net/test
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key
@@ -310,10 +310,10 @@ Monitor these endpoints:
 
 ```bash
 # Create backup
-mongodump --uri="mongodb://localhost:27017/mental-health-platform" --out=backup/
+mongodump --uri="mongodb+srv://gauravkhandelwal205_db_user:gaurav@cluster0.urnv9wg.mongodb.net/test" --out=backup/
 
 # Restore backup
-mongorestore --uri="mongodb://localhost:27017/mental-health-platform" backup/mental-health-platform/
+mongorestore --uri="mongodb+srv://gauravkhandelwal205_db_user:gaurav@cluster0.urnv9wg.mongodb.net/test" backup/test/
 ```
 
 ### 2. Automated Backups

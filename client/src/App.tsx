@@ -13,13 +13,16 @@ import LoginPage from '@pages/auth/LoginPage'
 import RegisterPage from '@pages/auth/RegisterPage'
 import HomePage from '@pages/HomePage'
 import ChatbotPage from '@pages/ChatbotPage'
-import SimpleAppointmentsPage from '@pages/SimpleAppointmentsPage'
 import CommunityPage from '@pages/CommunityPage'
 import ResourcesPage from '@pages/ResourcesPage'
+import AppointmentsPage from '@pages/AppointmentsPage'
 import ProfilePage from '@pages/ProfilePage'
 import AdminDashboard from '@pages/admin/AdminDashboard'
-import CounselorDashboard from '@pages/counselors/CounselorDashboard'
 import NotFoundPage from '@pages/NotFoundPage'
+
+// Dashboard Components
+import CounselorDashboard from '@components/dashboard/CounselorDashboard'
+import ModeratorDashboard from '@components/dashboard/ModeratorDashboard'
 
 // Protected Route Component
 import ProtectedRoute from '@components/auth/ProtectedRoute'
@@ -59,9 +62,9 @@ function App() {
           }>
             <Route index element={<HomePage />} />
             <Route path="chatbot" element={<ChatbotPage />} />
-                <Route path="appointments" element={<SimpleAppointmentsPage />} />
             <Route path="community" element={<CommunityPage />} />
             <Route path="resources" element={<ResourcesPage />} />
+            <Route path="appointments" element={<AppointmentsPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="settings" element={<ProfilePage />} />
           </Route>
@@ -79,7 +82,7 @@ function App() {
 
           {/* Counselor Routes */}
           <Route path="/counselor" element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['counselor']}>
               <div className="min-h-screen">
                 <Outlet />
               </div>
@@ -87,6 +90,18 @@ function App() {
           }>
             <Route index element={<CounselorDashboard />} />
           </Route>
+
+          {/* Moderator Routes */}
+          <Route path="/moderator" element={
+            <ProtectedRoute allowedRoles={['moderator']}>
+              <div className="min-h-screen">
+                <Outlet />
+              </div>
+            </ProtectedRoute>
+          }>
+            <Route index element={<ModeratorDashboard />} />
+          </Route>
+
 
           {/* 404 Route */}
           <Route path="*" element={<NotFoundPage />} />

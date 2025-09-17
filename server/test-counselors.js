@@ -3,7 +3,7 @@ require('dotenv').config();
 
 // Set environment variables if not set
 if (!process.env.MONGODB_URI) {
-  process.env.MONGODB_URI = 'mongodb+srv://vrajpatel402126_db_user:sih2025@cluster0.ksyr7z7.mongodb.net/mental-health-platform';
+  process.env.MONGODB_URI = 'mongodb+srv://gauravkhandelwal205_db_user:gaurav@cluster0.urnv9wg.mongodb.net/test';
 }
 
 // Connect to MongoDB
@@ -22,9 +22,46 @@ const testCounselors = async () => {
   try {
     await connectDB();
     
-    // Import models
-    const { Counselor } = require('./dist/models/Counselor');
-    const { User } = require('./dist/models/User');
+    // Define models inline
+    const userSchema = new mongoose.Schema({
+      firstName: { type: String, required: true },
+      lastName: { type: String, required: true },
+      email: { type: String, required: true, unique: true },
+      password: { type: String, required: true },
+      role: { type: String, enum: ['student', 'counselor', 'admin', 'moderator'], default: 'student' },
+      isEmailVerified: { type: Boolean, default: false },
+      profile: {
+        avatar: String,
+        bio: String,
+        phone: String
+      }
+    }, { timestamps: true });
+
+    const availabilitySchema = new mongoose.Schema({
+      dayOfWeek: { type: Number, required: true, min: 0, max: 6 },
+      startTime: { type: String, required: true },
+      endTime: { type: String, required: true },
+      isAvailable: { type: Boolean, default: true }
+    });
+
+    const counselorSchema = new mongoose.Schema({
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+      specialization: [{ type: String, required: true }],
+      experience: { type: Number, required: true, min: 0, max: 50 },
+      languages: [{ type: String, required: true }],
+      availability: [availabilitySchema],
+      rating: { type: Number, default: 0, min: 0, max: 5 },
+      totalSessions: { type: Number, default: 0, min: 0 },
+      bio: { type: String, required: true, maxlength: 1000 },
+      qualifications: [{ type: String, required: true, maxlength: 200 }],
+      isAvailable: { type: Boolean, default: true },
+      consultationFee: { type: Number, min: 0 },
+      maxSessionsPerDay: { type: Number, default: 8, min: 1, max: 12 },
+      currentSessionsToday: { type: Number, default: 0, min: 0 }
+    }, { timestamps: true });
+
+    const User = mongoose.model('User', userSchema);
+    const Counselor = mongoose.model('Counselor', counselorSchema);
     
     console.log('🔍 Checking counselors in database...');
     

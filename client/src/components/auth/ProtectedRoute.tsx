@@ -4,10 +4,11 @@ import { ReactNode } from 'react'
 
 interface ProtectedRouteProps {
   children: ReactNode
+  allowedRoles?: string[]
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading } = useAuthStore()
+const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
+  const { isAuthenticated, isLoading, user } = useAuthStore()
   const location = useLocation()
 
   if (isLoading) {
@@ -21,6 +22,21 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   if (!isAuthenticated) {
     // Redirect to login page with return url
     return <Navigate to="/auth/login" state={{ from: location }} replace />
+  }
+
+  // Check role-based access if allowedRoles is specified
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    // Redirect to appropriate dashboard based on user role
+    switch (user.role) {
+      case 'admin':
+        return <Navigate to="/admin" replace />
+      case 'counselor':
+        return <Navigate to="/counselor" replace />
+      case 'moderator':
+        return <Navigate to="/moderator" replace />
+      default:
+        return <Navigate to="/app" replace />
+    }
   }
 
   return <>{children}</>

@@ -139,17 +139,17 @@ CommunityPostSchema.index({ title: 'text', content: 'text', tags: 'text' })
 
 // Virtual for like count
 CommunityPostSchema.virtual('likeCount').get(function() {
-  return this.likes.length
+  return this.likes ? this.likes.length : 0
 })
 
 // Virtual for dislike count
 CommunityPostSchema.virtual('dislikeCount').get(function() {
-  return this.dislikes.length
+  return this.dislikes ? this.dislikes.length : 0
 })
 
 // Virtual for comment count
 CommunityPostSchema.virtual('commentCount').get(function() {
-  return this.comments.length
+  return this.comments ? this.comments.length : 0
 })
 
 // Method to check if user liked the post

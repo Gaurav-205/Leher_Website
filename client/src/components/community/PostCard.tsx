@@ -1,5 +1,4 @@
-import { motion } from 'framer-motion'
-import { Heart, ThumbsDown, MessageSquare, Eye, Clock, Users } from 'lucide-react'
+import { Heart, ThumbsDown, MessageSquare, Eye, Clock, Users, Reply } from 'lucide-react'
 import { CommunityPost, CommunityCategory } from '@types'
 
 interface PostCardProps {
@@ -8,9 +7,10 @@ interface PostCardProps {
   onLike: (postId: string) => void
   onDislike: (postId: string) => void
   onView: (postId: string) => void
+  onComment?: (postId: string) => void
 }
 
-const PostCard = ({ post, categories, onLike, onDislike, onView }: PostCardProps) => {
+const PostCard = ({ post, categories, onLike, onDislike, onView, onComment }: PostCardProps) => {
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -24,7 +24,7 @@ const PostCard = ({ post, categories, onLike, onDislike, onView }: PostCardProps
 
   const getAuthorName = (post: CommunityPost) => {
     if (post.isAnonymous) return 'Anonymous'
-    return `${post.author.firstName} ${post.author.lastName}`
+    return `${post.author?.firstName || 'Unknown'} ${post.author?.lastName || 'User'}`
   }
 
   const getCategoryLabel = (categoryValue: string) => {
@@ -33,80 +33,96 @@ const PostCard = ({ post, categories, onLike, onDislike, onView }: PostCardProps
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.002 }}
-      className="bg-white border rounded-lg p-3 hover:shadow-sm transition-all duration-200 cursor-pointer"
+    <div
+      className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200 cursor-pointer"
       onClick={() => onView(post._id)}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between mb-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center mb-1">
+          <div className="flex items-center mb-2 space-x-2">
             {post.isPinned && (
-              <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-1.5 py-0.5 rounded-full mr-2">
+              <span className="inline-flex items-center px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
                 Pinned
               </span>
             )}
-            <span className="bg-primary-100 text-primary-800 text-xs font-medium px-1.5 py-0.5 rounded-full">
+            <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
               {getCategoryLabel(post.category)}
             </span>
           </div>
           
-          <h3 className="text-sm font-semibold text-gray-900 mb-1 hover:text-primary-600 transition-colors truncate">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
             {post.title}
           </h3>
           
-          <p className="text-gray-600 text-xs mb-2 line-clamp-2">
+          <p className="text-gray-600 text-sm mb-3 line-clamp-3">
             {post.content}
           </p>
-          
-          <div className="flex items-center justify-between text-xs text-gray-600">
-            <div className="flex items-center space-x-3">
-              <span className="flex items-center">
-                <Users className="h-3 w-3 mr-0.5" />
-                {getAuthorName(post)}
-              </span>
-              <span className="flex items-center">
-                <MessageSquare className="h-3 w-3 mr-0.5" />
-                {post.commentCount}
-              </span>
-              <span className="flex items-center">
-                <Eye className="h-3 w-3 mr-0.5" />
-                {post.views}
-              </span>
-              <span className="flex items-center">
-                <Clock className="h-3 w-3 mr-0.5" />
-                {formatTimeAgo(post.createdAt)}
-              </span>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onLike(post._id)
-                }}
-                className="flex items-center text-gray-600 hover:text-red-600 transition-colors"
-              >
-                <Heart className="h-3 w-3 mr-0.5" />
-                {post.likeCount}
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onDislike(post._id)
-                }}
-                className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <ThumbsDown className="h-3 w-3 mr-0.5" />
-                {post.dislikeCount}
-              </button>
-            </div>
-          </div>
         </div>
       </div>
-    </motion.div>
+      
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4 text-sm text-gray-600">
+          <div className="flex items-center space-x-1">
+            <div className="h-6 w-6 bg-blue-600 rounded-full flex items-center justify-center">
+              <Users className="h-3 w-3 text-white" />
+            </div>
+            <span className="font-medium">{getAuthorName(post)}</span>
+          </div>
+          
+          <div className="flex items-center space-x-1">
+            <MessageSquare className="h-4 w-4" />
+            <span>{post.commentCount}</span>
+          </div>
+          
+          <div className="flex items-center space-x-1">
+            <Eye className="h-4 w-4" />
+            <span>{post.views}</span>
+          </div>
+          
+          <div className="flex items-center space-x-1">
+            <Clock className="h-4 w-4" />
+            <span>{formatTimeAgo(post.createdAt)}</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onLike(post._id)
+            }}
+            className="flex items-center space-x-1 px-2 py-1 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+          >
+            <Heart className="h-4 w-4" />
+            <span className="text-sm">{post.likeCount}</span>
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDislike(post._id)
+            }}
+            className="flex items-center space-x-1 px-2 py-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors"
+          >
+            <ThumbsDown className="h-4 w-4" />
+            <span className="text-sm">{post.dislikeCount}</span>
+          </button>
+
+          {onComment && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onComment(post._id)
+              }}
+              className="flex items-center space-x-1 px-2 py-1 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            >
+              <Reply className="h-4 w-4" />
+              <span className="text-sm">Reply</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 

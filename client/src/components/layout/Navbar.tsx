@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { 
   Search, 
@@ -8,10 +8,11 @@ import {
   Settings, 
   LogOut,
   MessageCircle,
-  Calendar,
   Users,
   BookOpen,
-  Shield
+  Shield,
+  Heart,
+  ChevronDown
 } from 'lucide-react'
 
 interface NavbarProps {
@@ -21,16 +22,18 @@ interface NavbarProps {
 const Navbar = ({ onMenuClick }: NavbarProps) => {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const [showUserMenu, setShowUserMenu] = useState(false)
 
   const handleLogout = () => {
     logout()
     navigate('/')
+    setShowUserMenu(false)
   }
 
   const navigationItems = [
+    { name: 'Home', href: '/app', icon: Heart },
     { name: 'Chatbot', href: '/app/chatbot', icon: MessageCircle },
-    { name: 'Appointments', href: '/app/appointments', icon: Calendar },
     { name: 'Community', href: '/app/community', icon: Users },
     { name: 'Resources', href: '/app/resources', icon: BookOpen },
   ]
@@ -39,30 +42,40 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
     navigationItems.push({ name: 'Admin', href: '/admin', icon: Shield })
   }
 
+  if (user?.role === 'counselor') {
+    navigationItems.push({ name: 'Dashboard', href: '/counselor', icon: Shield })
+  }
+
+  if (user?.role === 'moderator') {
+    navigationItems.push({ name: 'Moderation', href: '/moderator', icon: Shield })
+  }
+
+  const isActive = (href: string) => {
+    return location.pathname.startsWith(href)
+  }
+
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 justify-between">
+    <nav className="bg-white border-b border-gray-200">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 justify-between items-center">
           {/* Left side */}
           <div className="flex items-center">
             <button
               type="button"
-              className="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 lg:hidden"
+              className="rounded-lg p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 lg:hidden transition-colors duration-200"
               onClick={onMenuClick}
             >
               <Menu className="h-6 w-6" />
             </button>
 
             {/* Logo */}
-            <Link to="/app" className="flex items-center ml-4 lg:ml-0">
-              <div className="flex items-center">
-                <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">MH</span>
-                </div>
-                <span className="ml-2 text-xl font-prata font-bold text-gray-900">
-                  Mental Health Support
-                </span>
+            <Link to="/app" className="flex items-center ml-4 lg:ml-0 group">
+              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Heart className="h-4 w-4 text-white" />
               </div>
+              <span className="ml-2 text-lg font-medium text-gray-900">
+                Lehar
+              </span>
             </Link>
           </div>
 
@@ -74,9 +87,15 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-colors duration-200"
+                  className={`group flex items-center text-sm font-medium transition-colors duration-200 ${
+                    isActive(item.href)
+                      ? 'text-blue-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
                 >
-                  <Icon className="h-4 w-4 mr-2" />
+                  <Icon className={`h-4 w-4 mr-2 ${
+                    isActive(item.href) ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'
+                  }`} />
                   {item.name}
                 </Link>
               )
@@ -86,47 +105,53 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           {/* Right side */}
           <div className="flex items-center space-x-4">
             {/* Search */}
-            <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-md">
+            <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200">
               <Search className="h-5 w-5" />
             </button>
-
 
             {/* User menu */}
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center space-x-2 p-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                className="group flex items-center space-x-2 p-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                <div className="h-8 w-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary-600" />
+                <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <User className="h-4 w-4 text-white" />
                 </div>
-                <span className="hidden md:block text-sm font-medium">
+                <span className="hidden md:block text-sm font-medium text-gray-900">
                   {user?.firstName} {user?.lastName}
                 </span>
+                <ChevronDown className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors duration-200" />
               </button>
 
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-                  <div className="py-1">
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+                  <div className="p-2">
+                    <div className="px-3 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
                     <Link
                       to="/app/profile"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                      onClick={() => setShowUserMenu(false)}
                     >
-                      <User className="h-4 w-4 mr-2" />
+                      <User className="h-4 w-4 mr-3" />
                       Profile
                     </Link>
                     <Link
                       to="/app/settings"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                      onClick={() => setShowUserMenu(false)}
                     >
-                      <Settings className="h-4 w-4 mr-2" />
+                      <Settings className="h-4 w-4 mr-3" />
                       Settings
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors duration-200"
                     >
-                      <LogOut className="h-4 w-4 mr-2" />
+                      <LogOut className="h-4 w-4 mr-3" />
                       Sign out
                     </button>
                   </div>
