@@ -22,7 +22,7 @@ const ScrollReveal = ({
   threshold = 0.1
 }: ScrollRevealProps) => {
   const ref = useRef(null)
-  const isInView = useInView(ref, { threshold, once: true })
+  const isInView = useInView(ref, { amount: threshold, once: true })
   const prefersReducedMotion = useReducedMotion()
 
   const getInitialPosition = () => {

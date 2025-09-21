@@ -42,7 +42,7 @@ const PWAInstallButton = () => {
   }
 
   // Don't show if app is already installed and no update available
-  if (isAppInstalled && !showUpdate) {
+  if (isAppInstalled() && !showUpdate) {
     return null
   }
 

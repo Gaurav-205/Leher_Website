@@ -21,8 +21,8 @@ const AnalyticsProvider = ({ children }: AnalyticsProviderProps) => {
 
   // Set user ID when authenticated
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      analytics.setUserId(user.id)
+    if (isAuthenticated && user?._id) {
+      analytics.setUserId(user._id)
     }
   }, [isAuthenticated, user])
 

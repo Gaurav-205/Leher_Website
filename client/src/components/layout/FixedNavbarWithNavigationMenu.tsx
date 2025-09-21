@@ -111,7 +111,10 @@ const FixedNavbar = () => {
                 onError={(e) => {
                   // Fallback to Heart icon if image fails to load
                   e.currentTarget.style.display = 'none'
-                  e.currentTarget.nextElementSibling.style.display = 'flex'
+                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                  if (nextElement) {
+                    nextElement.style.display = 'flex'
+                  }
                 }}
               />
               <div className="h-10 w-10 bg-gradient-to-br from-[#2A3E66] to-[#00589F] rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md group-hover:from-[#00589F] group-hover:to-[#45A1E7] transition-all duration-200 hidden">

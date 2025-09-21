@@ -25,7 +25,7 @@ const PostDetailPage = () => {
       
       const response = await communityService.getPost(id!)
       if (response.success && response.data) {
-        setPost(response.data.post)
+        setPost(response.data)
       } else {
         setError('Post not found')
       }
@@ -200,7 +200,7 @@ const PostDetailPage = () => {
 
         {/* Comments Section */}
         <CommentSection
-          comments={post.comments || []}
+          comments={Array.isArray(post.comments) ? post.comments.filter(comment => typeof comment === 'object') as CommunityComment[] : []}
           onReply={handleReply}
           onLike={handleLikeComment}
           onDislike={handleDislikeComment}

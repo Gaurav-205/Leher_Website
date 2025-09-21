@@ -154,8 +154,8 @@ class PerformanceService {
         // Core Web Vitals related metrics
         const metrics = [
           { name: 'TTFB', value: nav.responseStart - nav.requestStart },
-          { name: 'DOM_LOAD', value: nav.domContentLoadedEventEnd - nav.navigationStart },
-          { name: 'PAGE_LOAD', value: nav.loadEventEnd - nav.navigationStart },
+          { name: 'DOM_LOAD', value: nav.domContentLoadedEventEnd - (nav as any).navigationStart },
+          { name: 'PAGE_LOAD', value: nav.loadEventEnd - (nav as any).navigationStart },
           { name: 'DNS_LOOKUP', value: nav.domainLookupEnd - nav.domainLookupStart },
           { name: 'TCP_CONNECT', value: nav.connectEnd - nav.connectStart },
           { name: 'REQUEST_RESPONSE', value: nav.responseEnd - nav.requestStart }

@@ -28,7 +28,7 @@ class PWAService {
     window.addEventListener('beforeinstallprompt', (e) => {
       console.log('PWA: Install prompt available')
       e.preventDefault()
-      this.deferredPrompt = e as PWAInstallPrompt
+      this.deferredPrompt = e as unknown as PWAInstallPrompt
       this.dispatchEvent('install-prompt-available')
     })
 
@@ -197,7 +197,7 @@ class PWAService {
         userVisibleOnly: true,
         applicationServerKey: this.urlBase64ToUint8Array(
           'BEl62iUYgUivxIkv69yViEuiBIa40HI0lF5HvQn9Y4Q' // Replace with your VAPID key
-        )
+        ) as unknown as ArrayBuffer
       })
 
       console.log('PWA: Push subscription successful', subscription)
@@ -221,7 +221,7 @@ class PWAService {
     for (let i = 0; i < rawData.length; ++i) {
       outputArray[i] = rawData.charCodeAt(i)
     }
-    return outputArray
+    return outputArray as Uint8Array
   }
 
   // Get app info

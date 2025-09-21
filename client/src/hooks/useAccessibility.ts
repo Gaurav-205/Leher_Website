@@ -57,7 +57,7 @@ export const useKeyboardNavigation = () => {
   }
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    const items = itemsRef.current.filter(item => !item.disabled)
+    const items = itemsRef.current.filter(item => !(item as any).disabled)
     
     switch (e.key) {
       case 'ArrowDown':
