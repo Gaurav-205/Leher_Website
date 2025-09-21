@@ -2,7 +2,7 @@
   "watch": ["src"],
   "ext": "ts,json",
   "ignore": ["src/**/*.spec.ts", "src/**/*.test.ts"],
-  "exec": "ts-node -r tsconfig-paths/register src/index.ts",
+  "exec": "node --max-old-space-size=4096 --expose-gc -r ts-node/register -r tsconfig-paths/register src/index.ts",
   "env": {
     "NODE_ENV": "development",
     "PORT": "5000",

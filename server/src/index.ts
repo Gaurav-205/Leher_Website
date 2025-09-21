@@ -86,8 +86,8 @@ app.use(generalLimiter)
 
 // Body parsing middleware
 app.use(compression())
-app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ extended: true, limit: '10mb' }))
+app.use(express.json({ limit: '5mb' }))
+app.use(express.urlencoded({ extended: true, limit: '5mb' }))
 
 // Logging middleware
 if (process.env.NODE_ENV === 'development') {
@@ -165,6 +165,27 @@ server.listen(PORT, () => {
   logger.info(`Server running on http://${HOST}:${PORT}`)
   logger.info(`Environment: ${process.env.NODE_ENV}`)
 })
+
+// Memory monitoring and garbage collection
+setInterval(() => {
+  const memUsage = process.memoryUsage()
+  const memUsageMB = {
+    rss: Math.round(memUsage.rss / 1024 / 1024),
+    heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+    heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+    external: Math.round(memUsage.external / 1024 / 1024)
+  }
+  
+  logger.info(`Memory Usage: RSS: ${memUsageMB.rss}MB, Heap: ${memUsageMB.heapUsed}/${memUsageMB.heapTotal}MB, External: ${memUsageMB.external}MB`)
+  
+  // Force garbage collection if heap usage is high
+  if (memUsageMB.heapUsed > 500) {
+    logger.warn('High memory usage detected, forcing garbage collection')
+    if (global.gc) {
+      global.gc()
+    }
+  }
+}, 30000) // Check every 30 seconds
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
