@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, Filter, BookOpen, Play, FileText, Image, TrendingUp, Star, AlertCircle, RefreshCw } from 'lucide-react'
 import { resourceService, Resource, ResourceCategory } from '@services/resourceService'
 import ResourceCard from '@components/resources/ResourceCard'
+import VideoPlayerModal from '@components/resources/VideoPlayerModal'
 import toast from 'react-hot-toast'
 
 const ResourcesPage = () => {
@@ -19,6 +20,15 @@ const ResourcesPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Video player state
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false)
+  const [currentVideo, setCurrentVideo] = useState<{
+    url: string
+    title: string
+    description?: string
+    isYouTube?: boolean
+  } | null>(null)
 
   useEffect(() => {
     loadData()
@@ -60,118 +70,69 @@ const ResourcesPage = () => {
 
   const handleViewResource = (resourceId: string) => {
     const resource = resources.find(r => r._id === resourceId)
-    if (!resource) return
+    if (!resource) {
+      toast.error('Resource not found')
+      return
+    }
 
     if (resource.type === 'video') {
-      // For YouTube videos, extract the video ID and create embedded player
-      if (resource.fileUrl && resource.fileUrl.includes('youtube.com')) {
-        const videoId = extractYouTubeVideoId(resource.fileUrl)
-        if (videoId) {
-          // Open video in a modal or new page with embedded player
-          openVideoPlayer(videoId, resource.title)
+      // Handle video playback
+      if (resource.fileUrl) {
+        let videoUrl = resource.fileUrl
+        let isYouTubeVideo = false
+        
+        // Check if it's a YouTube URL and convert to embed format
+        if (resource.fileUrl.includes('youtube.com') || resource.fileUrl.includes('youtu.be')) {
+          const videoId = extractYouTubeVideoId(resource.fileUrl)
+          if (videoId) {
+            videoUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`
+            isYouTubeVideo = true
+          } else {
+            toast.error('Invalid YouTube URL format')
+            return
+          }
         }
+        
+        // Open video in modal
+        setCurrentVideo({
+          url: videoUrl,
+          title: resource.title,
+          description: resource.description,
+          isYouTube: isYouTubeVideo
+        })
+        setShowVideoPlayer(true)
       } else {
-        // For local videos, play directly
-        openVideoPlayer(resource.fileUrl, resource.title)
+        toast.error('Video URL not available')
       }
     } else {
-      // For other resource types, open in new tab or modal
+      // For other resource types, open in new tab
       if (resource.fileUrl) {
         window.open(resource.fileUrl, '_blank')
+      } else {
+        toast.error('Resource file not available')
       }
     }
   }
 
   const extractYouTubeVideoId = (url: string): string | null => {
-    const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/
-    const match = url.match(regex)
-    return match ? match[1] : null
+    // Handle various YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=)([^&\n?#]+)/,
+      /(?:youtu\.be\/)([^&\n?#]+)/,
+      /(?:youtube\.com\/embed\/)([^&\n?#]+)/,
+      /(?:youtube\.com\/v\/)([^&\n?#]+)/
+    ]
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern)
+      if (match && match[1]) {
+        return match[1]
+      }
+    }
+    
+    return null
   }
 
-  const openVideoPlayer = (videoId: string, title: string) => {
-    // Create a modal or navigate to video player page
-    // For now, we'll open in a new tab with embedded player
-    let embedUrl: string
-    
-    if (videoId.startsWith('http')) {
-      // If it's a full URL, extract the video ID and create embed URL
-      const extractedId = extractYouTubeVideoId(videoId)
-      embedUrl = extractedId ? `https://www.youtube.com/embed/${extractedId}` : videoId
-    } else {
-      // If it's just a video ID, create embed URL
-      embedUrl = `https://www.youtube.com/embed/${videoId}`
-    }
-    
-    const playerWindow = window.open('', '_blank', 'width=900,height=700')
-    if (playerWindow) {
-      playerWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>${title}</title>
-          <style>
-            body { 
-              margin: 0; 
-              padding: 20px; 
-              background: #000; 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            }
-            .container { 
-              max-width: 900px; 
-              margin: 0 auto; 
-              background: #1a1a1a;
-              border-radius: 8px;
-              overflow: hidden;
-            }
-            h1 { 
-              color: white; 
-              text-align: center; 
-              margin: 0;
-              padding: 20px;
-              background: #2a2a2a;
-              font-size: 18px;
-              font-weight: 600;
-            }
-            .video-container {
-              position: relative;
-              width: 100%;
-              height: 0;
-              padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            }
-            iframe { 
-              position: absolute;
-              top: 0;
-              left: 0;
-              width: 100%; 
-              height: 100%; 
-              border: none; 
-            }
-            .error-message {
-              color: #ff6b6b;
-              text-align: center;
-              padding: 40px;
-              background: #2a2a2a;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>${title}</h1>
-            <div class="video-container">
-              <iframe 
-                src="${embedUrl}" 
-                frameborder="0" 
-                allowfullscreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                onerror="this.parentElement.innerHTML='<div class=\\"error-message\\">Video could not be loaded. Please try again later.</div>'"
-              ></iframe>
-            </div>
-          </div>
-        </body>
-        </html>
-      `)
-    }
-  }
 
   const resourceTypes = [
     { value: '', label: 'All Types' },
@@ -381,6 +342,21 @@ const ResourcesPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Video Player Modal */}
+      {currentVideo && (
+        <VideoPlayerModal
+          isOpen={showVideoPlayer}
+          onClose={() => {
+            setShowVideoPlayer(false)
+            setCurrentVideo(null)
+          }}
+          videoUrl={currentVideo.url}
+          title={currentVideo.title}
+          description={currentVideo.description}
+          isYouTube={currentVideo.isYouTube}
+        />
+      )}
     </div>
   )
 }

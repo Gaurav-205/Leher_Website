@@ -38,6 +38,12 @@ export interface ChatMessage {
   content: string
   timestamp: string
   isCrisis?: boolean
+  crisisSeverity?: 'low' | 'medium' | 'high' | 'critical'
+  crisisConfidence?: number
+  crisisKeywords?: string[]
+  isEncrypted?: boolean
+  originalContent?: string
+  decryptionError?: string
 }
 
 export interface ChatSession {
@@ -46,13 +52,20 @@ export interface ChatSession {
   messageCount: number
   createdAt: string
   updatedAt: string
+  crisisCount?: number
+  hasEncryptedMessages?: boolean
 }
 
 export interface SendMessageResponse {
   message: string
   sessionId: string
   isCrisis: boolean
+  crisisSeverity?: 'low' | 'medium' | 'high' | 'critical'
+  crisisConfidence?: number
+  crisisKeywords?: string[]
   timestamp: string
+  containsSensitiveInfo?: boolean
+  sanitizedMessage?: string
 }
 
 export interface ChatHistoryResponse {

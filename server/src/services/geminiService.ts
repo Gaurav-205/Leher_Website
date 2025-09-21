@@ -34,7 +34,7 @@ class GeminiService {
       }
 
       // Create a conversational prompt for natural, human-like responses
-      const systemPrompt = `You are Lehar, a friendly AI mental health companion. Keep responses SHORT, CONVERSATIONAL, and HUMAN-LIKE. 
+      const systemPrompt = `You are Leher, a friendly AI mental health companion. Keep responses SHORT, CONVERSATIONAL, and HUMAN-LIKE. 
 
 Key rules:
 - Talk like a caring friend, not a formal therapist
@@ -83,7 +83,7 @@ User message: ${prompt}`
     }
 
     try {
-      const crisisPrompt = `You are Lehar, a caring AI friend. Someone is in crisis - respond with SHORT, CARING messages.
+      const crisisPrompt = `You are Leher, a caring AI friend. Someone is in crisis - respond with SHORT, CARING messages.
 
 CRISIS RESPONSE:
 - Show you care: "I'm really worried about you right now"
@@ -202,7 +202,7 @@ Make them sound like advice from a caring friend, not a medical professional.`
     }
     
     // General supportive response
-    return "Hey, I'm Lehar! I'm here to listen and support you. If you're feeling really overwhelmed, remember these helplines: KIRAN 1800-599-0019 or Emergency 112. What's on your mind?"
+    return "Hey, I'm Leher! I'm here to listen and support you. If you're feeling really overwhelmed, remember these helplines: KIRAN 1800-599-0019 or Emergency 112. What's on your mind?"
   }
 }
 

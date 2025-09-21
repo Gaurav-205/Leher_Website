@@ -70,13 +70,13 @@ const AuthLayout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#A8CFF1]/10 via-white to-[#B9A6DC]/10 dark:from-[#0F0F23] dark:via-[#1A1A2E] dark:to-[#16213E] relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-2000"></div>
-        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse delay-3000"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-[#A8CFF1] dark:bg-[#A8CFF1]/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-[#B9A6DC] dark:bg-[#B9A6DC]/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-[#45A1E7] dark:bg-[#45A1E7]/20 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-2000"></div>
+        <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-[#00589F] dark:bg-[#00589F]/20 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse delay-3000"></div>
       </div>
 
       {/* Main content */}
@@ -95,11 +95,11 @@ const AuthLayout = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex items-center justify-center space-x-2 text-gray-600"
+            className="flex items-center justify-center space-x-2 text-[#2A3E66] dark:text-[#A8CFF1]"
           >
-            <Sparkles className="h-4 w-4 text-blue-500" />
-            <span className="text-sm">Powered by Lehar - Your Mental Wellness Companion</span>
-            <Sparkles className="h-4 w-4 text-purple-500" />
+            <Sparkles className="h-4 w-4 text-[#00589F] dark:text-[#45A1E7]" />
+            <span className="text-sm font-montserrat">Powered by Leher - Your Mental Wellness Companion</span>
+            <Sparkles className="h-4 w-4 text-[#B9A6DC] dark:text-[#A8CFF1]" />
           </motion.div>
         </div>
       </footer>

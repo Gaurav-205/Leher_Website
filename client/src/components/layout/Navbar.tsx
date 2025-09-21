@@ -74,7 +74,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 <Heart className="h-4 w-4 text-white" />
               </div>
               <span className="ml-2 text-lg font-medium text-gray-900">
-                Lehar
+                Leher
               </span>
             </Link>
           </div>

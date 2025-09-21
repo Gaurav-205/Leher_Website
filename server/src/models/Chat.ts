@@ -3,8 +3,18 @@ import mongoose, { Document, Schema } from 'mongoose'
 export interface IChatMessage extends Document {
   role: 'user' | 'assistant'
   content: string
+  encryptedContent?: string // For sensitive messages
   timestamp: Date
   isCrisis?: boolean
+  crisisSeverity?: 'low' | 'medium' | 'high' | 'critical'
+  crisisConfidence?: number
+  crisisKeywords?: string[]
+  isEncrypted?: boolean
+  encryptionMetadata?: {
+    iv: string
+    salt: string
+    timestamp: number
+  }
 }
 
 export interface IChat extends Document {
@@ -27,6 +37,10 @@ const ChatMessageSchema = new Schema<IChatMessage>({
     required: true,
     maxlength: [4000, 'Message content cannot exceed 4000 characters']
   },
+  encryptedContent: {
+    type: String,
+    required: false
+  },
   timestamp: {
     type: Date,
     default: Date.now
@@ -34,6 +48,29 @@ const ChatMessageSchema = new Schema<IChatMessage>({
   isCrisis: {
     type: Boolean,
     default: false
+  },
+  crisisSeverity: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'critical'],
+    default: 'low'
+  },
+  crisisConfidence: {
+    type: Number,
+    min: 0,
+    max: 1,
+    default: 0
+  },
+  crisisKeywords: [{
+    type: String
+  }],
+  isEncrypted: {
+    type: Boolean,
+    default: false
+  },
+  encryptionMetadata: {
+    iv: String,
+    salt: String,
+    timestamp: Number
   }
 })
 

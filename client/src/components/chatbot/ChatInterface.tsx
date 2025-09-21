@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Bot, User, AlertTriangle, Menu, Heart, Sparkles, ArrowRight, Smile, Frown, Meh, Activity, Wind, Play, Pause, RotateCcw } from 'lucide-react'
+import { Send, Bot, User, AlertTriangle, Menu, Heart, Sparkles, ArrowRight, Smile, Frown, Meh, Activity, Wind, Play, Pause, RotateCcw, MessageCircle, Lightbulb, Shield, Clock, Zap } from 'lucide-react'
 import { chatbotService } from '@services/chatbotService'
 import toast from 'react-hot-toast'
+import { PromptSuggestion } from '@/components/ui/prompt-suggestion'
 
 interface Message {
   id: string
@@ -11,8 +12,14 @@ interface Message {
   timestamp: Date
   type?: 'text' | 'crisis' | 'suggestion' | 'mood' | 'breathing' | 'tool'
   isCrisis?: boolean
+  crisisSeverity?: 'low' | 'medium' | 'high' | 'critical'
+  crisisConfidence?: number
+  crisisKeywords?: string[]
   mood?: number
   toolData?: any
+  isEncrypted?: boolean
+  originalContent?: string
+  decryptionError?: string
 }
 
 interface ChatInterfaceProps {
@@ -25,7 +32,7 @@ const ChatInterface = ({ sessionId: propSessionId, onToggleSidebar, onSessionCha
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hello! I'm Lehar, your AI mental health companion. How are you feeling today? I'm here to listen and provide support on your wellness journey.",
+      text: "Hi there! I'm Leher, your AI wellness companion. I'm here to listen and support you. How can I help you today?",
       isFromUser: false,
       timestamp: new Date(),
       type: 'text'
@@ -40,11 +47,40 @@ const ChatInterface = ({ sessionId: propSessionId, onToggleSidebar, onSessionCha
   const [breathingActive, setBreathingActive] = useState(false)
   const [breathingPhase, setBreathingPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale')
   const [breathingCount, setBreathingCount] = useState(0)
+  const [showPrompts, setShowPrompts] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const breathingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const breathingIntervalRef = useRef<number | null>(null)
+
+  // Simplified and more aesthetic prompt suggestions
+  const suggestedPrompts = [
+    "I'm feeling anxious",
+    "Help with stress", 
+    "Can't sleep well",
+    "Feeling lonely",
+    "Need motivation",
+    "Want to talk",
+    "Breathing exercises",
+    "Feeling overwhelmed"
+  ]
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const handlePromptClick = (prompt: string) => {
+    setInputMessage(prompt)
+    setShowPrompts(false)
+    // Auto-send the prompt
+    setTimeout(() => {
+      const form = document.querySelector('form') as HTMLFormElement
+      if (form) {
+        form.requestSubmit()
+      }
+    }, 100)
+  }
+
+  const handleNewMessage = () => {
+    setShowPrompts(true)
   }
 
   useEffect(() => {
@@ -59,13 +95,14 @@ const ChatInterface = ({ sessionId: propSessionId, onToggleSidebar, onSessionCha
       // Reset to new chat
       setMessages([{
         id: '1',
-        text: "Hello! I'm Lehar, your AI mental health companion. How are you feeling today? I'm here to listen and provide support on your wellness journey.",
+        text: "Hi there! I'm Leher, your AI wellness companion. I'm here to listen and support you. How can I help you today?",
         isFromUser: false,
         timestamp: new Date(),
         type: 'text'
       }])
       setSessionId(null)
       setIsCrisisDetected(false)
+      setShowPrompts(true)
     }
   }, [propSessionId, sessionId])
 
@@ -78,7 +115,13 @@ const ChatInterface = ({ sessionId: propSessionId, onToggleSidebar, onSessionCha
         isFromUser: msg.role === 'user',
         timestamp: new Date(msg.timestamp),
         type: msg.isCrisis ? 'crisis' : 'text',
-        isCrisis: msg.isCrisis
+        isCrisis: msg.isCrisis,
+        crisisSeverity: msg.crisisSeverity,
+        crisisConfidence: msg.crisisConfidence,
+        crisisKeywords: msg.crisisKeywords,
+        isEncrypted: msg.isEncrypted,
+        originalContent: msg.originalContent,
+        decryptionError: msg.decryptionError
       }))
       
       setMessages(chatMessages)
@@ -87,6 +130,9 @@ const ChatInterface = ({ sessionId: propSessionId, onToggleSidebar, onSessionCha
       // Check if any message is a crisis
       const hasCrisis = chatMessages.some(msg => msg.isCrisis)
       setIsCrisisDetected(hasCrisis)
+      
+      // Hide prompts if there are more than 2 messages
+      setShowPrompts(chatMessages.length <= 2)
       
       toast.success('Chat history loaded')
     } catch (error) {
@@ -111,59 +157,71 @@ const ChatInterface = ({ sessionId: propSessionId, onToggleSidebar, onSessionCha
     const currentMessage = inputMessage
     setInputMessage('')
     setIsTyping(true)
+    setShowPrompts(false)
 
     try {
       const response = await chatbotService.sendMessage(currentMessage, sessionId)
       
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to get response')
-      }
-      
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: response.data?.message || 'I apologize, but I couldn\'t generate a response. Please try again.',
-        isFromUser: false,
-        timestamp: new Date(response.data?.timestamp || Date.now()),
-        type: response.data?.isCrisis ? 'crisis' : 'text',
-        isCrisis: Boolean(response.data?.isCrisis)
-      }
-
-      setMessages(prev => [...prev, aiResponse])
-      
-      // Update session ID if this is a new session
-      if (response.data?.sessionId && !sessionId) {
-        setSessionId(response.data.sessionId)
-        // Notify parent component about the new session
-        onSessionChange?.(response.data.sessionId)
-      }
-
-      // Handle crisis detection
-      if (response.data?.isCrisis) {
-        setIsCrisisDetected(true)
-        toast.error('Crisis detected - Please seek immediate professional help')
+      if (response.success) {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: response.data.message,
+          isFromUser: false,
+          timestamp: new Date(),
+          type: response.data.isCrisis ? 'crisis' : 'text',
+          isCrisis: response.data.isCrisis,
+          crisisSeverity: response.data.crisisSeverity,
+          crisisConfidence: response.data.crisisConfidence,
+          crisisKeywords: response.data.crisisKeywords
+        }
+        
+        setMessages(prev => [...prev, aiMessage])
+        
+        // Update session ID if this is a new session
+        if (!sessionId && response.data.sessionId) {
+          setSessionId(response.data.sessionId)
+          onSessionChange?.(response.data.sessionId)
+        }
+        
+        // Check for crisis detection with enhanced severity
+        if (response.data.isCrisis) {
+          setIsCrisisDetected(true)
+          
+          // Show different crisis alerts based on severity
+          if (response.data.crisisSeverity === 'critical') {
+            toast.error('Critical crisis detected - Immediate help needed!', {
+              duration: 10000,
+              icon: '🚨'
+            })
+          } else if (response.data.crisisSeverity === 'high') {
+            toast.error('High-risk situation detected', {
+              duration: 8000,
+              icon: '⚠️'
+            })
+          }
+        }
+        
+        // Show sensitive info warning if detected
+        if (response.data.containsSensitiveInfo) {
+          toast.success('Sensitive information detected and protected', {
+            duration: 5000,
+            icon: '🔒'
+          })
+        }
+        
+        // Show mood check after a few messages
+        if (messages.length >= 3 && !showMoodCheck) {
+          setTimeout(() => setShowMoodCheck(true), 1000)
+        }
+      } else {
+        throw new Error(response.message || 'Failed to send message')
       }
     } catch (error: any) {
       console.error('Error sending message:', error)
       
-      // More specific error handling
-      let errorMessage = "I'm sorry, I'm having trouble responding right now. Please try again or contact our support team if the issue persists."
-      
-      if (error.response?.status === 401) {
-        errorMessage = "Please log in again to continue the conversation."
-        toast.error('Session expired. Please log in again.')
-      } else if (error.response?.status === 429) {
-        errorMessage = "I'm receiving too many requests. Please wait a moment and try again."
-        toast.error('Too many requests. Please wait a moment.')
-      } else if (error.response?.status >= 500) {
-        errorMessage = "Our servers are experiencing issues. Please try again in a few minutes."
-        toast.error('Server error. Please try again later.')
-      } else {
-        toast.error('Failed to send message. Please try again.')
-      }
-      
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: errorMessage,
+        text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment, or if this is an emergency, please call the helpline: 9152987821",
         isFromUser: false,
         timestamp: new Date(),
         type: 'text'
@@ -174,79 +232,32 @@ const ChatInterface = ({ sessionId: propSessionId, onToggleSidebar, onSessionCha
     }
   }
 
-  const quickReplies = [
-    "I'm feeling anxious",
-    "I need help with stress",
-    "I'm having trouble sleeping",
-    "I feel overwhelmed",
-    "I need someone to talk to"
-  ]
-
-  // Mood tracking functions
-  const handleMoodSelection = async (mood: number) => {
-    const moodEmojis = ['😢', '😔', '😐', '🙂', '😊']
-    const moodTexts = ['Very low', 'Low', 'Neutral', 'Good', 'Great']
-    
-    const moodMessage: Message = {
-      id: Date.now().toString(),
-      text: `I'm feeling ${moodTexts[mood - 1]} ${moodEmojis[mood - 1]}`,
-      isFromUser: true,
-      timestamp: new Date(),
-      type: 'mood',
-      mood: mood
-    }
-
-    setMessages(prev => [...prev, moodMessage])
-    setShowMoodCheck(false)
-    setIsTyping(true)
-
-    try {
-      // Track mood in backend
-      await chatbotService.trackMood(mood, undefined, sessionId || undefined)
-      
-      // Send message to chatbot
-      const response = await chatbotService.sendMessage(moodMessage.text, sessionId)
-      
-      if (response.success) {
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          text: response.data?.message || 'Thank you for sharing how you feel. How can I support you today?',
-          isFromUser: false,
-          timestamp: new Date(response.data?.timestamp || Date.now()),
-          type: response.data?.isCrisis ? 'crisis' : 'text',
-          isCrisis: Boolean(response.data?.isCrisis)
-        }
-        setMessages(prev => [...prev, aiResponse])
-      }
-    } catch (error) {
-      console.error('Error sending mood message:', error)
-      toast.error('Failed to track mood. Please try again.')
-    } finally {
-      setIsTyping(false)
-    }
-  }
-
-  // Breathing exercise functions
+  // Breathing exercise functions (keeping existing functionality)
   const startBreathingExercise = () => {
     setShowBreathingTool(true)
     setBreathingActive(true)
     setBreathingPhase('inhale')
     setBreathingCount(0)
     
-    const phases = ['inhale', 'hold', 'exhale'] as const
-    let currentPhaseIndex = 0
     let count = 0
+    const phases = ['inhale', 'hold', 'exhale'] as const
+    let phaseIndex = 0
     
-    breathingIntervalRef.current = setInterval(() => {
-      setBreathingPhase(phases[currentPhaseIndex])
+    breathingIntervalRef.current = window.setInterval(() => {
+      count++
       
-      if (phases[currentPhaseIndex] === 'exhale') {
-        count++
-        setBreathingCount(count)
+      if (count % 4 === 0) {
+        phaseIndex = (phaseIndex + 1) % phases.length
+        setBreathingPhase(phases[phaseIndex])
       }
       
-      currentPhaseIndex = (currentPhaseIndex + 1) % phases.length
-    }, 4000) // 4 seconds per phase
+      if (count >= 12) {
+        setBreathingCount(prev => prev + 1)
+        count = 0
+        phaseIndex = 0
+        setBreathingPhase('inhale')
+      }
+    }, 1000)
   }
 
   const stopBreathingExercise = () => {
@@ -279,62 +290,37 @@ const ChatInterface = ({ sessionId: propSessionId, onToggleSidebar, onSessionCha
       timestamp: new Date(),
       type: 'text'
     }
-
+    
     setMessages(prev => [...prev, userMessage])
     setIsTyping(true)
-
+    
     try {
       const response = await chatbotService.sendMessage(reply, sessionId)
       
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to get response')
-      }
-      
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: response.data?.message || 'I apologize, but I couldn\'t generate a response. Please try again.',
-        isFromUser: false,
-        timestamp: new Date(response.data?.timestamp || Date.now()),
-        type: response.data?.isCrisis ? 'crisis' : 'text',
-        isCrisis: Boolean(response.data?.isCrisis)
-      }
-
-      setMessages(prev => [...prev, aiResponse])
-      
-      // Update session ID if this is a new session
-      if (response.data?.sessionId && !sessionId) {
-        setSessionId(response.data.sessionId)
-        // Notify parent component about the new session
-        onSessionChange?.(response.data.sessionId)
-      }
-
-      // Handle crisis detection
-      if (response.data?.isCrisis) {
-        setIsCrisisDetected(true)
-        toast.error('Crisis detected - Please seek immediate professional help')
+      if (response.success) {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: response.data.message,
+          isFromUser: false,
+          timestamp: new Date(),
+          type: response.data.isCrisis ? 'crisis' : 'text',
+          isCrisis: response.data.isCrisis
+        }
+        
+        setMessages(prev => [...prev, aiMessage])
+        
+        if (response.data.isCrisis) {
+          setIsCrisisDetected(true)
+        }
+      } else {
+        throw new Error(response.message || 'Failed to send message')
       }
     } catch (error: any) {
       console.error('Error sending quick reply:', error)
       
-      // More specific error handling
-      let errorMessage = "I'm sorry, I'm having trouble responding right now. Please try again or contact our support team if the issue persists."
-      
-      if (error.response?.status === 401) {
-        errorMessage = "Please log in again to continue the conversation."
-        toast.error('Session expired. Please log in again.')
-      } else if (error.response?.status === 429) {
-        errorMessage = "I'm receiving too many requests. Please wait a moment and try again."
-        toast.error('Too many requests. Please wait a moment.')
-      } else if (error.response?.status >= 500) {
-        errorMessage = "Our servers are experiencing issues. Please try again in a few minutes."
-        toast.error('Server error. Please try again later.')
-      } else {
-        toast.error('Failed to send message. Please try again.')
-      }
-      
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: errorMessage,
+        text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
         isFromUser: false,
         timestamp: new Date(),
         type: 'text'
@@ -346,356 +332,389 @@ const ChatInterface = ({ sessionId: propSessionId, onToggleSidebar, onSessionCha
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-white">
-      {/* Chat Header - Sticky at top */}
-      <div className="flex-shrink-0 p-6 border-b border-gray-200 bg-white">
-        <div className="flex items-center">
-          {/* Sidebar Toggle Button */}
-          {onToggleSidebar && (
-            <button
-              onClick={onToggleSidebar}
-              className="mr-3 p-2 hover:bg-gray-100 rounded-xl transition-colors duration-300 lg:hidden"
-              title="Open chat history"
-            >
-              <Menu className="h-5 w-5 text-gray-600" />
-            </button>
-          )}
-          
-          <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
-            <Heart className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-light text-gray-900">Lehar AI Assistant</h2>
-            <p className="text-lg text-gray-600">Available 24/7</p>
-          </div>
-          <div className="ml-auto flex items-center space-x-3">
-            {/* Quick Action Buttons */}
-            <button
-              onClick={() => setShowMoodCheck(true)}
-              className="p-2 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-              title="Check your mood"
-            >
-              <Smile className="h-5 w-5 text-blue-600" />
-            </button>
-            <button
-              onClick={startBreathingExercise}
-              className="p-2 hover:bg-green-50 rounded-lg transition-colors duration-200"
-              title="Start breathing exercise"
-            >
-              <Wind className="h-5 w-5 text-green-600" />
-            </button>
-            <div className="flex items-center space-x-2 px-3 py-1 bg-green-50 rounded-lg">
-              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-green-700">Online</span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Crisis Alert */}
-        {isCrisisDetected && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start">
-              <AlertTriangle className="h-5 w-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-red-800 font-medium mb-2">Crisis Support Available</p>
-                <div className="text-red-600 text-sm space-y-1">
-                  <p><strong>Emergency:</strong> 112 (All India Emergency)</p>
-                  <p><strong>KIRAN Helpline:</strong> 1800-599-0019 (24/7 mental health support)</p>
-                  <p><strong>Tele-MANAS:</strong> 14416 (National Tele Mental Health Program)</p>
-                  <p><strong>National Suicide Prevention:</strong> 9152987821</p>
-                </div>
-                <p className="text-red-700 text-xs mt-2">
-                  Please reach out to a trusted friend, family member, or professional immediately.
-                </p>
+    <div className="flex flex-col h-full w-full bg-white dark:bg-[#0F0F23]">
+      {/* Minimalist Header */}
+      <div className="flex-shrink-0 px-6 py-4 border-b border-gray-100 dark:border-[#A8CFF1]/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {/* Sidebar Toggle Button */}
+            {onToggleSidebar && (
+              <button
+                onClick={onToggleSidebar}
+                className="mr-3 p-2 hover:bg-gray-50 dark:hover:bg-[#1A1A2E]/50 rounded-lg transition-colors duration-200 lg:hidden"
+                title="Open chat history"
+              >
+                <Menu className="h-5 w-5 text-gray-500 dark:text-[#B8B8B8]" />
+              </button>
+            )}
+            
+            {/* AI Assistant Info - Minimalist */}
+            <div className="flex items-center space-x-3">
+              <div className="h-8 w-8 bg-gradient-to-br from-[#2A3E66] to-[#00589F] dark:from-[#A8CFF1] dark:to-[#45A1E7] rounded-full flex items-center justify-center">
+                <Bot className="h-4 w-4 text-white dark:text-[#0F0F23]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-medium text-gray-900 dark:text-[#A8CFF1] font-poppins">Leher AI</h2>
+                <p className="text-sm text-gray-500 dark:text-[#B8B8B8] font-montserrat">Always here to help</p>
               </div>
             </div>
           </div>
-        )}
+          
+          {/* Crisis Alert - Subtle */}
+          {isCrisisDetected && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center space-x-2 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/50 rounded-full"
+            >
+              <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-medium text-red-700 dark:text-red-400 font-montserrat">Crisis Support</span>
+            </motion.div>
+          )}
+        </div>
       </div>
 
-      {/* Messages Area - Scrollable only */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
-        {messages.map((message) => (
-          <div
+      {/* Messages Area - Clean and Spacious */}
+      <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6 min-h-0">
+        {messages.map((message, index) => (
+          <motion.div
             key={message.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: index * 0.05 }}
             className={`flex ${message.isFromUser ? 'justify-end' : 'justify-start'}`}
           >
-            <div className={`flex items-start space-x-3 max-w-xs lg:max-w-md ${message.isFromUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+            <div className={`flex items-start space-x-3 max-w-3xl ${message.isFromUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+              {/* Minimalist Avatar */}
+              <div className={`flex-shrink-0 h-7 w-7 rounded-full flex items-center justify-center ${
                 message.isFromUser 
-                  ? 'bg-blue-600' 
-                  : 'bg-gray-100'
+                  ? 'bg-gray-100' 
+                  : 'bg-gradient-to-br from-indigo-500 to-purple-600'
               }`}>
                 {message.isFromUser ? (
-                  <User className="h-4 w-4 text-white" />
+                  <User className="h-3.5 w-3.5 text-gray-600" />
                 ) : (
-                  <Bot className="h-4 w-4 text-gray-600" />
+                  <Bot className="h-3.5 w-3.5 text-white" />
                 )}
               </div>
-              <div className={`px-4 py-3 rounded-lg ${
-                message.isFromUser
-                  ? 'bg-blue-600 text-white'
-                  : message.isCrisis
-                  ? 'bg-red-50 border border-red-200 text-red-900'
-                  : 'bg-gray-50 text-gray-900'
+              
+              {/* Message Content - Clean Design */}
+              <div className={`flex flex-col space-y-1 ${
+                message.isFromUser ? 'items-end' : 'items-start'
               }`}>
-                {message.isCrisis && !message.isFromUser && (
-                  <div className="flex items-center mb-2">
-                    <AlertTriangle className="h-4 w-4 text-red-500 mr-1" />
-                    <span className="text-xs font-medium text-red-600">Crisis Response</span>
-                  </div>
-                )}
-                <p className="text-sm leading-relaxed">{message.text}</p>
-                <p className={`text-xs mt-2 ${
-                  message.isFromUser 
-                    ? 'text-blue-100' 
+                <div className={`px-4 py-3 rounded-2xl max-w-full ${
+                  message.isFromUser
+                    ? 'bg-[#2A3E66] dark:bg-[#00589F] text-white rounded-br-md'
                     : message.isCrisis
-                    ? 'text-red-500'
-                    : 'text-gray-500'
+                    ? message.crisisSeverity === 'critical'
+                      ? 'bg-red-100 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-500/50 text-red-900 dark:text-red-200'
+                      : message.crisisSeverity === 'high'
+                      ? 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-500/50 text-orange-900 dark:text-orange-200'
+                      : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-500/50 text-yellow-900 dark:text-yellow-200'
+                    : 'bg-gray-50 dark:bg-[#1A1A2E] text-gray-900 dark:text-[#A8CFF1]'
                 }`}>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+                  
+                  {/* Crisis severity indicator */}
+                  {message.isCrisis && message.crisisSeverity && (
+                    <div className="mt-2 flex items-center space-x-2">
+                      <div className={`h-2 w-2 rounded-full ${
+                        message.crisisSeverity === 'critical' ? 'bg-red-500 animate-pulse' :
+                        message.crisisSeverity === 'high' ? 'bg-orange-500' :
+                        message.crisisSeverity === 'medium' ? 'bg-yellow-500' :
+                        'bg-blue-500'
+                      }`}></div>
+                      <span className="text-xs font-medium capitalize text-[#2A3E66] dark:text-[#A8CFF1]">
+                        {message.crisisSeverity} risk
+                        {message.crisisConfidence && ` (${Math.round(message.crisisConfidence * 100)}% confidence)`}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Encryption indicator */}
+                  {message.isEncrypted && (
+                    <div className="mt-2 flex items-center space-x-1">
+                      <Shield className="h-3 w-3 text-green-600" />
+                      <span className="text-xs text-green-600 font-medium">Encrypted</span>
+                    </div>
+                  )}
+                  
+                  {/* Decryption error */}
+                  {message.decryptionError && (
+                    <div className="mt-2 flex items-center space-x-1">
+                      <AlertTriangle className="h-3 w-3 text-red-500" />
+                      <span className="text-xs text-red-500">Decryption failed</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Subtle Timestamp */}
+                <span className="text-xs text-gray-400 px-2">
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+                </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
-
-        {/* Typing Indicator */}
+        
+        {/* Minimalist Typing Indicator */}
         {isTyping && (
-          <div className="flex justify-start">
-            <div className="flex items-start space-x-3">
-              <div className="h-8 w-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Bot className="h-4 w-4 text-gray-600" />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-start"
+          >
+            <div className="flex items-start space-x-3 max-w-3xl">
+              <div className="flex-shrink-0 h-7 w-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <Bot className="h-3.5 w-3.5 text-white" />
               </div>
-              <div className="bg-gray-50 px-4 py-3 rounded-lg">
+              <div className="bg-gray-50 rounded-2xl px-4 py-3">
                 <div className="flex space-x-1">
-                  <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
-
+        
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Mood Check Modal */}
+      {/* Modern Prompt Suggestions */}
       <AnimatePresence>
-        {showMoodCheck && (
+        {showPrompts && !isTyping && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowMoodCheck(false)}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="flex-shrink-0 px-6 py-6 border-t border-gray-100 bg-gray-50/50"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl p-6 max-w-md w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">How are you feeling?</h3>
-                <p className="text-gray-600 mb-6">Select your current mood</p>
-                
-                <div className="flex justify-center space-x-4 mb-6">
-                  {[1, 2, 3, 4, 5].map((mood) => (
-                    <button
-                      key={mood}
-                      onClick={() => handleMoodSelection(mood)}
-                      className="w-12 h-12 rounded-full bg-gray-100 hover:bg-blue-100 transition-colors duration-200 flex items-center justify-center text-2xl"
-                    >
-                      {mood === 1 && '😢'}
-                      {mood === 2 && '😔'}
-                      {mood === 3 && '😐'}
-                      {mood === 4 && '🙂'}
-                      {mood === 5 && '😊'}
-                    </button>
-                  ))}
-                </div>
-                
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Very Low</span>
-                  <span>Great</span>
-                </div>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 text-gray-600">
+                <Zap className="h-4 w-4" />
+                <span className="text-sm font-medium">Quick starters</span>
               </div>
-            </motion.div>
+              
+              <div className="flex flex-wrap gap-2">
+                {suggestedPrompts.map((prompt, index) => (
+                  <PromptSuggestion
+                    key={index}
+                    onClick={() => handlePromptClick(prompt)}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs hover:bg-white hover:border-gray-300 hover:shadow-sm transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                  >
+                    {prompt}
+                  </PromptSuggestion>
+                ))}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Breathing Exercise Modal */}
-      <AnimatePresence>
-        {showBreathingTool && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowBreathingTool(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl p-8 max-w-md w-full text-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mb-6">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-2">Breathing Exercise</h3>
-                <p className="text-gray-600">Follow the circle to breathe calmly</p>
-              </div>
-              
-              <div className="relative mb-8">
-                <div className={`w-48 h-48 mx-auto rounded-full border-4 transition-all duration-1000 ${
-                  breathingPhase === 'inhale' 
-                    ? 'bg-blue-100 border-blue-400 scale-110' 
-                    : breathingPhase === 'hold'
-                    ? 'bg-green-100 border-green-400 scale-105'
-                    : 'bg-purple-100 border-purple-400 scale-100'
-                }`}>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-semibold text-gray-700">
-                      {breathingPhase === 'inhale' && 'Breathe In'}
-                      {breathingPhase === 'hold' && 'Hold'}
-                      {breathingPhase === 'exhale' && 'Breathe Out'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <p className="text-lg font-medium text-gray-700 mb-2">
-                  Cycle {Math.floor(breathingCount / 3) + 1}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {breathingPhase === 'inhale' && 'Inhale slowly for 4 seconds'}
-                  {breathingPhase === 'hold' && 'Hold your breath for 4 seconds'}
-                  {breathingPhase === 'exhale' && 'Exhale slowly for 4 seconds'}
-                </p>
-              </div>
-              
-              <div className="flex justify-center space-x-4">
-                <button
-                  onClick={breathingActive ? stopBreathingExercise : startBreathingExercise}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2"
-                >
-                  {breathingActive ? (
-                    <>
-                      <Pause className="h-5 w-5" />
-                      <span>Stop</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-5 w-5" />
-                      <span>Start</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => setShowBreathingTool(false)}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                >
-                  Close
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Quick Replies - Show only when conversation is just starting (initial greeting) */}
-      {messages.length === 1 && !messages.some(msg => msg.isFromUser) && (
-        <div className="px-6 pb-4">
-          <div className="flex items-center mb-3">
-            <Sparkles className="h-4 w-4 text-blue-600 mr-2" />
-            <p className="text-sm font-medium text-gray-700">Quick replies:</p>
-          </div>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {quickReplies.map((reply, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickReply(reply)}
-                className="px-4 py-2 text-sm bg-white border border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-700 rounded-lg transition-colors duration-200"
-              >
-                {reply}
-              </button>
-            ))}
-          </div>
-          
-          {/* Interactive Tools */}
-          <div className="flex items-center mb-3">
-            <Activity className="h-4 w-4 text-green-600 mr-2" />
-            <p className="text-sm font-medium text-gray-700">Quick tools:</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setShowMoodCheck(true)}
-              className="px-4 py-2 text-sm bg-white border border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-700 rounded-lg transition-colors duration-200 flex items-center space-x-2"
-            >
-              <Smile className="h-4 w-4" />
-              <span>Check Mood</span>
-            </button>
-            <button
-              onClick={startBreathingExercise}
-              className="px-4 py-2 text-sm bg-white border border-gray-300 hover:border-green-500 hover:bg-green-50 text-gray-700 rounded-lg transition-colors duration-200 flex items-center space-x-2"
-            >
-              <Wind className="h-4 w-4" />
-              <span>Breathing Exercise</span>
-            </button>
-            <button
-              onClick={() => handleQuickReply("I need help with mindfulness")}
-              className="px-4 py-2 text-sm bg-white border border-gray-300 hover:border-purple-500 hover:bg-purple-50 text-gray-700 rounded-lg transition-colors duration-200 flex items-center space-x-2"
-            >
-              <Heart className="h-4 w-4" />
-              <span>Mindfulness Tips</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Input Area - Sticky at bottom */}
-      <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 bg-white">
-        <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
+      {/* Minimalist Input Area */}
+      <div className="flex-shrink-0 px-6 py-4 border-t border-gray-100 bg-white">
+        <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
           <div className="flex-1">
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={isTyping ? "Lehar is typing..." : "Type your message..."}
-              disabled={isTyping}
-              maxLength={1000}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-            {inputMessage.length > 800 && (
-              <div className="text-xs text-gray-500 mt-1 text-right">
-                {inputMessage.length}/1000 characters
-              </div>
-            )}
+            <div className="relative">
+              <textarea
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                placeholder={isTyping ? "Leher is typing..." : "Type your message..."}
+                disabled={isTyping}
+                maxLength={1000}
+                rows={1}
+                className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl bg-gray-50 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed resize-none min-h-[48px] max-h-32"
+                style={{ 
+                  height: 'auto',
+                  minHeight: '48px'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement
+                  target.style.height = 'auto'
+                  target.style.height = Math.min(target.scrollHeight, 128) + 'px'
+                }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+              />
+              {inputMessage.length > 800 && (
+                <div className="absolute bottom-2 right-12 text-xs text-gray-400">
+                  {inputMessage.length}/1000
+                </div>
+              )}
+            </div>
           </div>
           
           <button
             type="submit"
             disabled={!inputMessage.trim() || isTyping}
-            className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center"
+            className="p-3 bg-gray-900 text-white rounded-2xl hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
             title={isTyping ? "Please wait..." : "Send message"}
           >
             {isTyping ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             ) : (
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4" />
             )}
           </button>
         </form>
+        
+        {/* Subtle Help Text */}
+        {messages.length > 1 && !isTyping && (
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-xs text-gray-400">
+              <MessageCircle className="h-3 w-3" />
+              <span>Press Enter to send</span>
+            </div>
+            <button
+              onClick={handleNewMessage}
+              className="text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+            >
+              New chat
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Enhanced Crisis Support Modal */}
+      {isCrisisDetected && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl"
+          >
+            <div className="text-center">
+              <div className="h-16 w-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="h-8 w-8 text-red-600" />
+              </div>
+              
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Crisis Support</h3>
+              <p className="text-gray-600 mb-6">
+                Our AI has detected signs that you might be in distress. Please reach out to these helplines:
+              </p>
+              
+              <div className="space-y-3">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-2xl">
+                  <p className="font-semibold text-red-800">Emergency</p>
+                  <p className="text-red-700 text-lg font-mono">112</p>
+                  <p className="text-xs text-red-600 mt-1">For immediate danger</p>
+                </div>
+                
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl">
+                  <p className="font-semibold text-blue-800">KIRAN Helpline</p>
+                  <p className="text-blue-700 text-lg font-mono">1800-599-0019</p>
+                  <p className="text-xs text-blue-600 mt-1">24/7 mental health support</p>
+                </div>
+                
+                <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
+                  <p className="font-semibold text-green-800">Suicide Prevention</p>
+                  <p className="text-green-700 text-lg font-mono">9152987821</p>
+                  <p className="text-xs text-green-600 mt-1">Crisis intervention</p>
+                </div>
+              </div>
+              
+              <div className="mt-6 p-4 bg-gray-50 rounded-2xl">
+                <p className="text-sm text-gray-600">
+                  <strong>Remember:</strong> You're not alone. These feelings are temporary, and help is available. 
+                  Reach out to someone you trust or call one of these helplines.
+                </p>
+              </div>
+              
+              <div className="flex space-x-3 mt-6">
+                <button
+                  onClick={() => setIsCrisisDetected(false)}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Continue Chat
+                </button>
+                <button
+                  onClick={() => window.open('tel:112')}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors"
+                >
+                  Call Emergency
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Minimalist Breathing Tool */}
+      {showBreathingTool && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl"
+          >
+            <div className="text-center">
+              <div className="h-16 w-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                <Wind className="h-8 w-8 text-white" />
+              </div>
+              
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Breathing Exercise</h3>
+              <p className="text-gray-600 mb-6">Follow the circle to breathe calmly</p>
+              
+              <div className="relative h-24 w-24 mx-auto mb-6">
+                <div className={`h-full w-full rounded-full border-2 transition-all duration-1000 ${
+                  breathingPhase === 'inhale' ? 'border-indigo-500 scale-110' :
+                  breathingPhase === 'hold' ? 'border-green-500 scale-110' :
+                  'border-purple-500 scale-100'
+                }`}></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-sm font-medium text-gray-700 capitalize">
+                    {breathingPhase}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-center space-x-3 mb-6">
+                <button
+                  onClick={breathingActive ? stopBreathingExercise : startBreathingExercise}
+                  className="px-6 py-2 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors flex items-center space-x-2"
+                >
+                  {breathingActive ? (
+                    <>
+                      <Pause className="h-4 w-4" />
+                      <span>Pause</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      <span>Start</span>
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  onClick={() => setShowBreathingTool(false)}
+                  className="px-6 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+              
+              <p className="text-sm text-gray-500">
+                Cycle {breathingCount + 1} • {breathingActive ? 'Active' : 'Paused'}
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   )
 }

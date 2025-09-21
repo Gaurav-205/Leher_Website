@@ -2,9 +2,16 @@ import { Routes, Route, Outlet } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import AnalyticsProvider from '@components/analytics/AnalyticsProvider'
+import ErrorBoundary from '@components/error/ErrorBoundary'
+import GlobalErrorHandler from '@components/error/GlobalErrorHandler'
+import PWAInstallButton from '@components/pwa/PWAInstallButton'
+import SkipLink from '@components/accessibility/SkipLink'
+import Announcer from '@components/accessibility/Announcer'
 
 // Layout Components
-import FixedNavbar from '@components/layout/FixedNavbar'
+import FixedNavbar from '@components/layout/FixedNavbarWithNavigationMenu'
 import AuthLayout from '@components/layout/AuthLayout'
 
 // Page Components
@@ -36,9 +43,15 @@ function App() {
   }, [checkAuthStatus])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Fixed Navbar for all pages */}
-      <FixedNavbar />
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AnalyticsProvider>
+          <GlobalErrorHandler />
+          <SkipLink />
+          <Announcer message="" />
+          <div className="min-h-screen bg-gradient-to-br from-[#A8CFF1]/10 via-white to-[#B9A6DC]/10 dark:from-[#0F0F23] dark:via-[#1A1A2E] dark:to-[#16213E]">
+            {/* Fixed Navbar for all pages */}
+            <FixedNavbar />
       
       {/* Main content with top padding to account for fixed navbar */}
       <div className="pt-16">
@@ -102,14 +115,17 @@ function App() {
             <Route index element={<ModeratorDashboard />} />
           </Route>
 
-
           {/* 404 Route */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
       
-      <Toaster />
-    </div>
+            <Toaster />
+            <PWAInstallButton />
+          </div>
+        </AnalyticsProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   )
 }
 

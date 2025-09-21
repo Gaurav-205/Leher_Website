@@ -93,16 +93,16 @@ const LoginForm = () => {
       transition={{ duration: 0.6 }}
       className="w-full max-w-md mx-auto"
     >
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-8">
+      <div className="bg-white dark:bg-[#1A1A2E] rounded-xl shadow-lg border border-[#A8CFF1]/20 dark:border-[#A8CFF1]/30 p-8 backdrop-blur-sm">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Heart className="h-6 w-6 text-white" />
+          <div className="h-12 w-12 bg-gradient-to-br from-[#2A3E66] to-[#00589F] dark:from-[#A8CFF1] dark:to-[#45A1E7] rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Heart className="h-6 w-6 text-white dark:text-[#0F0F23]" />
           </div>
-          <h1 className="text-2xl font-light text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-[#2A3E66] dark:text-[#A8CFF1] mb-2 font-poppins">
             Welcome Back
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-[#45A1E7] dark:text-[#B8B8B8] font-montserrat">
             Sign in to your account
           </p>
         </div>
@@ -111,12 +111,12 @@ const LoginForm = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-[#2A3E66] dark:text-[#A8CFF1] mb-2 font-montserrat">
               Email Address
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
+                <Mail className="h-5 w-5 text-[#45A1E7] dark:text-[#B8B8B8]" />
               </div>
               <input
                 type="email"
@@ -124,14 +124,14 @@ const LoginForm = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
-                  errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 hover:border-gray-400'
+                className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-[#16213E] text-[#2A3E66] dark:text-[#A8CFF1] placeholder-[#45A1E7] dark:placeholder-[#B8B8B8] focus:outline-none focus:ring-2 focus:ring-[#00589F] dark:focus:ring-[#45A1E7] focus:border-[#00589F] dark:focus:border-[#45A1E7] transition-colors duration-200 ${
+                  errors.email ? 'border-red-300 dark:border-red-500/50 focus:ring-red-500 focus:border-red-500' : 'border-[#A8CFF1]/30 dark:border-[#A8CFF1]/30 hover:border-[#45A1E7] dark:hover:border-[#A8CFF1]/50'
                 }`}
                 placeholder="Enter your email"
               />
             </div>
             {errors.email && (
-              <div className="flex items-center mt-2 text-sm text-red-600">
+              <div className="flex items-center mt-2 text-sm text-red-600 dark:text-red-400">
                 <AlertCircle className="h-4 w-4 mr-1" />
                 {errors.email}
               </div>
@@ -140,12 +140,12 @@ const LoginForm = () => {
 
           {/* Password Field */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-[#2A3E66] dark:text-[#A8CFF1] mb-2 font-montserrat">
               Password
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
+                <Lock className="h-5 w-5 text-[#45A1E7] dark:text-[#B8B8B8]" />
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -153,20 +153,20 @@ const LoginForm = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className={`w-full pl-10 pr-12 py-3 border rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 ${
-                  errors.password ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 hover:border-gray-400'
+                className={`w-full pl-10 pr-12 py-3 border rounded-lg bg-white dark:bg-[#16213E] text-[#2A3E66] dark:text-[#A8CFF1] placeholder-[#45A1E7] dark:placeholder-[#B8B8B8] focus:outline-none focus:ring-2 focus:ring-[#00589F] dark:focus:ring-[#45A1E7] focus:border-[#00589F] dark:focus:border-[#45A1E7] transition-colors duration-200 ${
+                  errors.password ? 'border-red-300 dark:border-red-500/50 focus:ring-red-500 focus:border-red-500' : 'border-[#A8CFF1]/30 dark:border-[#A8CFF1]/30 hover:border-[#45A1E7] dark:hover:border-[#A8CFF1]/50'
                 }`}
                 placeholder="Enter your password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center hover:bg-gray-100 rounded-r-lg transition-colors duration-200"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center hover:bg-[#A8CFF1]/10 dark:hover:bg-[#1A1A2E]/50 rounded-r-lg transition-colors duration-200"
               >
                 {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  <EyeOff className="h-5 w-5 text-[#45A1E7] hover:text-[#2A3E66] dark:hover:text-[#A8CFF1]" />
                 ) : (
-                  <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  <Eye className="h-5 w-5 text-[#45A1E7] hover:text-[#2A3E66] dark:hover:text-[#A8CFF1]" />
                 )}
               </button>
             </div>
@@ -180,7 +180,7 @@ const LoginForm = () => {
 
           {/* User Type Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-[#2A3E66] dark:text-[#A8CFF1] mb-3 font-montserrat">
               Login as
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -196,18 +196,18 @@ const LoginForm = () => {
                   onClick={() => setFormData(prev => ({ ...prev, userType: value as any }))}
                   className={`relative p-3 rounded-lg border transition-colors duration-200 ${
                     formData.userType === value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 bg-white hover:border-gray-400 hover:bg-gray-50 text-gray-700'
+                      ? 'border-[#00589F] bg-[#A8CFF1]/10 dark:bg-[#1A1A2E]/50 text-[#2A3E66] dark:text-[#A8CFF1]'
+                      : 'border-[#A8CFF1]/30 dark:border-[#A8CFF1]/20 bg-white dark:bg-[#16213E] hover:border-[#45A1E7] dark:hover:border-[#A8CFF1]/50 hover:bg-[#A8CFF1]/5 dark:hover:bg-[#1A1A2E]/30 text-[#2A3E66] dark:text-[#A8CFF1]'
                   }`}
                 >
                   <div className="flex flex-col items-center space-y-2">
-                    <Icon className={`h-5 w-5 ${formData.userType === value ? 'text-blue-600' : 'text-gray-500'}`} />
+                    <Icon className={`h-5 w-5 ${formData.userType === value ? 'text-[#00589F] dark:text-[#45A1E7]' : 'text-[#45A1E7] dark:text-[#B8B8B8]'}`} />
                     <span className="text-xs font-medium">
                       {label}
                     </span>
                   </div>
                   {formData.userType === value && (
-                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-600 rounded-full flex items-center justify-center">
+                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-[#00589F] dark:bg-[#45A1E7] rounded-full flex items-center justify-center">
                       <div className="h-1.5 w-1.5 bg-white rounded-full"></div>
                     </div>
                   )}
@@ -227,13 +227,13 @@ const LoginForm = () => {
                 onChange={handleChange}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors duration-200"
               />
-              <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 font-medium">
+              <label htmlFor="rememberMe" className="ml-2 block text-sm text-[#2A3E66] dark:text-[#A8CFF1] font-medium font-montserrat">
                 Remember me
               </label>
             </div>
             <Link
               to="/auth/forgot-password"
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+              className="text-sm text-[#00589F] dark:text-[#45A1E7] hover:text-[#2A3E66] dark:hover:text-[#A8CFF1] font-medium transition-colors duration-200 font-montserrat"
             >
               Forgot password?
             </Link>
@@ -243,7 +243,7 @@ const LoginForm = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-6 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center"
+            className="w-full py-3 px-6 bg-gradient-to-r from-[#2A3E66] to-[#00589F] dark:from-[#A8CFF1] dark:to-[#45A1E7] text-white dark:text-[#0F0F23] font-semibold rounded-xl hover:from-[#00589F] hover:to-[#45A1E7] dark:hover:from-[#45A1E7] dark:hover:to-[#B9A6DC] focus:outline-none focus:ring-2 focus:ring-[#45A1E7] dark:focus:ring-[#A8CFF1] focus:ring-offset-2 dark:focus:ring-offset-[#0F0F23] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center font-montserrat"
           >
             {isLoading ? (
               <>
@@ -261,11 +261,11 @@ const LoginForm = () => {
 
         {/* Sign Up Link */}
         <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[#45A1E7] dark:text-[#B8B8B8] font-montserrat">
             Don't have an account?{' '}
             <Link
               to="/auth/register"
-              className="font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200"
+              className="font-medium text-[#00589F] dark:text-[#45A1E7] hover:text-[#2A3E66] dark:hover:text-[#A8CFF1] transition-colors duration-200"
             >
               Sign up for free
             </Link>

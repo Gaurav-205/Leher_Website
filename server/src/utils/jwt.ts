@@ -18,8 +18,8 @@ export interface JWTPayload {
 export const generateToken = (payload: JWTPayload): string => {
   return jwt.sign(payload, getJWTSecret(), {
     expiresIn: JWT_EXPIRE,
-    issuer: 'lehar-platform',
-    audience: 'lehar-users'
+    issuer: 'leher-platform',
+    audience: 'leher-users'
   } as jwt.SignOptions)
 }
 
@@ -37,7 +37,7 @@ export const generateVerificationToken = (payload: JWTPayload): string => {
 
 export const verifyToken = (token: string): JWTPayload => {
   return jwt.verify(token, getJWTSecret(), {
-    issuer: 'lehar-platform',
-    audience: 'lehar-users'
+    issuer: 'leher-platform',
+    audience: 'leher-users'
   }) as JWTPayload
 }

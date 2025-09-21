@@ -1,28 +1,16 @@
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@store/authStore'
 import { 
-  Heart, 
   MessageCircle, 
   Users, 
   BookOpen, 
   ArrowRight, 
-  Clock, 
-  Shield, 
-  AlertTriangle, 
   Phone, 
   TrendingUp, 
-  Calendar,
-  Star,
-  Target,
-  Activity,
-  Zap,
-  CheckCircle,
-  Calendar as CalendarIcon,
-  Bell
+  Calendar
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import WellnessWidget from './WellnessWidget'
-import MotivationalQuote from './MotivationalQuote'
 
 const StudentDashboard = () => {
   const { user } = useAuthStore()

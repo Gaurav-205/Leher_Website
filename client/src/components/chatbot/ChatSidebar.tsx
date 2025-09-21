@@ -283,7 +283,7 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
                   <Bot className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Lehar AI</p>
+                  <p className="font-medium text-gray-900">Leher AI</p>
                   <p className="text-sm text-gray-600">Mental Health Companion</p>
                 </div>
               </div>

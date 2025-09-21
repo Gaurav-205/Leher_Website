@@ -4,6 +4,8 @@ import { Chat } from '@models/Chat'
 import { User } from '@models/User'
 import { AuthRequest } from '@middleware/auth'
 import geminiService from '@services/geminiService'
+import crisisDetectionService from '@services/crisisDetectionService'
+import encryptionService from '@services/encryptionService'
 import logger from '@utils/logger'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -35,32 +37,21 @@ export const sendMessage = async (req: AuthRequest, res: Response, next: NextFun
       return
     }
 
-    // Enhanced crisis detection following comprehensive mental health guidelines
-    const crisisKeywords = [
-      'suicide', 'kill myself', 'end it all', 'not worth living', 'want to die', 
-      'self harm', 'hurt myself', 'end my life', 'not worth it', 'better off dead',
-      'suicidal', 'self-harm', 'cutting', 'overdose', 'poison', 'jump off',
-      'hang myself', 'shoot myself', 'drown myself', 'burn myself',
-      'no point living', 'world without me', 'everyone better off',
-      'final solution', 'permanent solution', 'escape pain',
-      'end the pain', 'stop the pain', 'can\'t take it anymore',
-      'give up', 'lose hope', 'hopeless', 'helpless',
-      'want to disappear', 'disappear forever', 'never wake up',
-      'sleep forever', 'end everything', 'no way out',
-      'trapped', 'no escape', 'can\'t go on', 'done with life',
-      'hate living', 'life is pointless', 'nothing matters',
-      'wish i was dead', 'should be dead', 'deserve to die'
-    ]
+    // Generate user-specific encryption key
+    const masterKey = process.env.ENCRYPTION_MASTER_KEY || 'default-master-key-change-in-production'
+    const userKey = encryptionService.generateUserKey(userId.toString(), masterKey)
+
+    // Check if message contains sensitive information
+    const containsSensitiveInfo = encryptionService.containsSensitiveInfo(message)
+    const sanitizedMessage = containsSensitiveInfo ? encryptionService.sanitizeMessage(message) : message
+
+    // Enhanced ML-based crisis detection
+    const crisisDetection = crisisDetectionService.analyzeCrisis(message)
     
-    // More sophisticated crisis detection
-    const lowerMessage = message.toLowerCase()
-    const isCrisis = crisisKeywords.some(keyword => 
-      lowerMessage.includes(keyword.toLowerCase())
-    ) || 
-    // Check for patterns that might indicate crisis
-    (lowerMessage.includes('want to') && (lowerMessage.includes('die') || lowerMessage.includes('end'))) ||
-    (lowerMessage.includes('can\'t') && (lowerMessage.includes('anymore') || lowerMessage.includes('take it'))) ||
-    (lowerMessage.includes('no point') && lowerMessage.includes('living'))
+    // Log crisis detection for monitoring
+    if (crisisDetection.isCrisis) {
+      crisisDetectionService.logCrisisDetection(crisisDetection, userId.toString(), message)
+    }
 
     let chatSession
     let sessionIdToUse = sessionId
@@ -82,24 +73,40 @@ export const sendMessage = async (req: AuthRequest, res: Response, next: NextFun
         messages: [],
         isActive: true
       })
-      // Save the new session to ensure createdAt is set
       await chatSession.save()
     }
 
-    // Add user message to chat
-    chatSession.messages.push({
+    // Prepare user message with encryption if needed
+    const userMessageData: any = {
       role: 'user' as const,
-      content: message,
+      content: sanitizedMessage,
       timestamp: new Date(),
-      isCrisis
-    } as any)
+      isCrisis: crisisDetection.isCrisis,
+      crisisSeverity: crisisDetection.severity,
+      crisisConfidence: crisisDetection.confidence,
+      crisisKeywords: crisisDetection.keywords,
+      isEncrypted: containsSensitiveInfo
+    }
 
-    // Generate AI response
+    // Encrypt sensitive content if needed
+    if (containsSensitiveInfo) {
+      const encryptedData = encryptionService.encryptMessage(message, userKey)
+      userMessageData.encryptedContent = encryptedData.encrypted
+      userMessageData.encryptionMetadata = {
+        iv: encryptedData.iv,
+        salt: encryptedData.salt,
+        timestamp: encryptedData.timestamp
+      }
+    }
+
+    // Add user message to chat
+    chatSession.messages.push(userMessageData as any)
+
+    // Generate AI response with enhanced context
     let aiResponse: string
-    const recentMessages = chatSession.messages.slice(-10) // Get last 10 messages for context
+    const recentMessages = chatSession.messages.slice(-10)
     const context = recentMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')
 
-    // Enhanced context with mood and conversation patterns
     const sessionDuration = chatSession.createdAt 
       ? Date.now() - new Date(chatSession.createdAt).getTime() 
       : 0
@@ -108,24 +115,38 @@ export const sendMessage = async (req: AuthRequest, res: Response, next: NextFun
       recentMessages: context,
       messageCount: chatSession.messages.length,
       sessionDuration,
-      isCrisis,
-      userMood: message.includes('feeling') ? 'mood_mentioned' : 'general'
+      isCrisis: crisisDetection.isCrisis,
+      crisisSeverity: crisisDetection.severity,
+      crisisConfidence: crisisDetection.confidence,
+      userMood: message.includes('feeling') ? 'mood_mentioned' : 'general',
+      sentiment: crisisDetection.sentiment,
+      riskFactors: crisisDetection.riskFactors
     }
 
-    if (isCrisis) {
-      aiResponse = await geminiService.generateCrisisResponse(message)
-      logger.warn(`Crisis message detected from user ${userId}: ${message}`)
+    if (crisisDetection.isCrisis) {
+      aiResponse = crisisDetectionService.getCrisisResponse(crisisDetection.severity, crisisDetection.confidence)
+      logger.warn(`Crisis message detected from user ${userId}: ${message}`, {
+        severity: crisisDetection.severity,
+        confidence: crisisDetection.confidence,
+        keywords: crisisDetection.keywords
+      })
     } else {
       aiResponse = await geminiService.generateResponse(message, JSON.stringify(enhancedContext))
     }
 
-    // Add AI response to chat
-    chatSession.messages.push({
+    // Prepare AI response message
+    const aiMessageData: any = {
       role: 'assistant' as const,
       content: aiResponse,
       timestamp: new Date(),
-      isCrisis
-    } as any)
+      isCrisis: crisisDetection.isCrisis,
+      crisisSeverity: crisisDetection.severity,
+      crisisConfidence: crisisDetection.confidence,
+      crisisKeywords: crisisDetection.keywords
+    }
+
+    // Add AI response to chat
+    chatSession.messages.push(aiMessageData as any)
 
     // Save chat session
     await chatSession.save()
@@ -135,12 +156,22 @@ export const sendMessage = async (req: AuthRequest, res: Response, next: NextFun
       data: {
         message: aiResponse,
         sessionId: sessionIdToUse,
-        isCrisis,
-        timestamp: new Date()
+        isCrisis: crisisDetection.isCrisis,
+        crisisSeverity: crisisDetection.severity,
+        crisisConfidence: crisisDetection.confidence,
+        crisisKeywords: crisisDetection.keywords,
+        timestamp: new Date(),
+        containsSensitiveInfo,
+        sanitizedMessage: containsSensitiveInfo ? sanitizedMessage : undefined
       }
     })
 
-    logger.info(`Chat message processed for user ${userId}, session: ${sessionIdToUse}`)
+    logger.info(`Chat message processed for user ${userId}, session: ${sessionIdToUse}`, {
+      crisisDetected: crisisDetection.isCrisis,
+      severity: crisisDetection.severity,
+      confidence: crisisDetection.confidence,
+      encrypted: containsSensitiveInfo
+    })
   } catch (error) {
     next(error)
   }
@@ -176,11 +207,47 @@ export const getChatHistory = async (req: AuthRequest, res: Response, next: Next
       return
     }
 
+    // Generate user-specific encryption key for decryption
+    const masterKey = process.env.ENCRYPTION_MASTER_KEY || 'default-master-key-change-in-production'
+    const userKey = encryptionService.generateUserKey(userId.toString(), masterKey)
+
+    // Process messages to decrypt if needed
+    const processedMessages = chatSession.messages.map(msg => {
+      const messageData: any = {
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        isCrisis: msg.isCrisis,
+        crisisSeverity: msg.crisisSeverity,
+        crisisConfidence: msg.crisisConfidence,
+        crisisKeywords: msg.crisisKeywords,
+        isEncrypted: msg.isEncrypted
+      }
+
+      // Decrypt encrypted content if present
+      if (msg.isEncrypted && msg.encryptedContent && msg.encryptionMetadata) {
+        try {
+          const encryptedMessage = {
+            encrypted: msg.encryptedContent,
+            iv: msg.encryptionMetadata.iv,
+            salt: msg.encryptionMetadata.salt,
+            timestamp: msg.encryptionMetadata.timestamp
+          }
+          messageData.originalContent = encryptionService.decryptMessage(encryptedMessage, userKey)
+        } catch (error) {
+          logger.error('Failed to decrypt message:', error)
+          messageData.decryptionError = 'Failed to decrypt message'
+        }
+      }
+
+      return messageData
+    })
+
     res.json({
       success: true,
       data: {
         sessionId: chatSession.sessionId,
-        messages: chatSession.messages,
+        messages: processedMessages,
         createdAt: chatSession.createdAt,
         updatedAt: chatSession.updatedAt
       }
