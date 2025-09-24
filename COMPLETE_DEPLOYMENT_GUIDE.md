@@ -71,6 +71,8 @@
    Output Directory: dist
    Install Command: npm install
    ```
+   
+   **Note**: The `vercel.json` file is already configured for you with the correct settings.
 
 3. **Add Environment Variables**
    ```
