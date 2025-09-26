@@ -12,8 +12,8 @@ const CustomNavigationMenuTrigger = React.forwardRef<
   <NavigationMenuPrimitive.Trigger
     ref={ref}
     className={cn(
-      "group inline-flex h-9 w-max items-center justify-center px-3 py-2 text-sm font-medium transition-colors hover:bg-[#A8CFF1]/10 hover:text-[#00589F] focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-[#A8CFF1]/10 data-[state=open]:bg-[#A8CFF1]/10 font-montserrat",
-      isScrolled ? 'text-[#2A3E66]' : 'text-[#2A3E66] drop-shadow-lg',
+      "group inline-flex h-10 w-max items-center justify-center px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-[#A8CFF1]/10 hover:text-[#00589F] focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-[#A8CFF1]/10 data-[state=open]:bg-[#A8CFF1]/10 font-montserrat rounded-lg hover:shadow-sm",
+      isScrolled ? 'text-[#2A3E66] dark:text-[#A8CFF1]' : 'text-[#2A3E66] dark:text-[#A8CFF1] drop-shadow-lg',
       className
     )}
     {...props}

@@ -27,6 +27,16 @@ import ProfilePage from '@pages/ProfilePage'
 import AdminDashboard from '@pages/admin/AdminDashboard'
 import NotFoundPage from '@pages/NotFoundPage'
 
+// Public Pages
+import AboutPage from '@pages/AboutPage'
+import ServicesPage from '@pages/ServicesPage'
+import ExpertsPage from '@pages/ExpertsPage'
+import CentresPage from '@pages/CentresPage'
+import PartnersPage from '@pages/PartnersPage'
+
+// About Sub-pages
+import AboutMissionPage from '@pages/about/AboutMissionPage'
+
 // Dashboard Components
 import CounselorDashboard from '@components/dashboard/CounselorDashboard'
 import ModeratorDashboard from '@components/dashboard/ModeratorDashboard'
@@ -58,6 +68,14 @@ function App() {
         <Routes>
           {/* Root route - shows landing page for non-authenticated users, redirects to /app for authenticated users */}
           <Route path="/" element={<LandingPage />} />
+          
+          {/* Public Routes */}
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/about/mission" element={<AboutMissionPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/experts" element={<ExpertsPage />} />
+          <Route path="/centres" element={<CentresPage />} />
+          <Route path="/partners" element={<PartnersPage />} />
           
           {/* Auth Routes - only accessible when not authenticated */}
           <Route path="/auth" element={<AuthLayout />}>

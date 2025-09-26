@@ -134,25 +134,25 @@ const CommunityPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <div className="min-h-screen bg-gradient-to-br from-[#A8CFF1]/5 via-white to-[#B9A6DC]/5 dark:from-[#0F0F23] dark:via-[#1A1A2E] dark:to-[#16213E]">
         <div className="h-full w-full flex flex-col">
-          <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+          <div className="flex-shrink-0 px-6 py-6 border-b border-[#A8CFF1]/20 dark:border-[#A8CFF1]/10 bg-white/80 dark:bg-[#1A1A2E]/80 backdrop-blur-sm">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Users className="h-4 w-4 text-white" />
+              <div className="flex items-center space-x-4">
+                <div className="h-10 w-10 bg-gradient-to-br from-[#A8CFF1] to-[#B9A6DC] dark:from-[#1A1A2E] dark:to-[#16213E] rounded-xl flex items-center justify-center">
+                  <Users className="h-5 w-5 text-[#2A3E66] dark:text-[#A8CFF1]" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-light text-gray-900">Community</h1>
-                  <p className="text-lg text-gray-600">Connect with fellow students</p>
+                  <h1 className="text-3xl font-bold text-[#2A3E66] dark:text-[#A8CFF1] font-poppins">Community</h1>
+                  <p className="text-lg text-[#45A1E7] dark:text-[#B8B8B8] font-montserrat">Connect with fellow students</p>
                 </div>
               </div>
             </div>
           </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading community posts...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00589F] dark:border-[#45A1E7] mx-auto mb-4"></div>
+              <p className="text-[#45A1E7] dark:text-[#B8B8B8] font-montserrat">Loading community posts...</p>
             </div>
           </div>
         </div>
@@ -162,28 +162,29 @@ const CommunityPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <div className="min-h-screen bg-gradient-to-br from-[#A8CFF1]/5 via-white to-[#B9A6DC]/5 dark:from-[#0F0F23] dark:via-[#1A1A2E] dark:to-[#16213E]">
         <div className="h-full w-full flex flex-col">
-          <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 bg-white/80 backdrop-blur-sm">
-            <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-red-600 rounded-lg flex items-center justify-center">
-                <Users className="h-4 w-4 text-white" />
+          <div className="flex-shrink-0 px-6 py-6 border-b border-[#A8CFF1]/20 dark:border-[#A8CFF1]/10 bg-white/80 dark:bg-[#1A1A2E]/80 backdrop-blur-sm">
+            <div className="flex items-center space-x-4">
+              <div className="h-10 w-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                <Users className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-light text-gray-900">Community</h1>
-                <p className="text-lg text-gray-600">Connect with fellow students</p>
+                <h1 className="text-3xl font-bold text-[#2A3E66] dark:text-[#A8CFF1] font-poppins">Community</h1>
+                <p className="text-lg text-[#45A1E7] dark:text-[#B8B8B8] font-montserrat">Connect with fellow students</p>
               </div>
             </div>
           </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="h-16 w-16 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="h-8 w-8 text-red-600" />
+              <div className="h-16 w-16 bg-red-100 dark:bg-red-900/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="h-8 w-8 text-red-600 dark:text-red-400" />
               </div>
-              <p className="text-red-600 mb-4 text-lg font-light">{error}</p>
+              <h3 className="text-xl font-bold text-[#2A3E66] dark:text-[#A8CFF1] mb-2 font-poppins">Error loading community</h3>
+              <p className="text-red-600 dark:text-red-400 mb-4 text-lg font-montserrat">{error}</p>
               <button 
                 onClick={loadData}
-                className="inline-flex items-center px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors duration-200"
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#2A3E66] to-[#00589F] dark:from-[#A8CFF1] dark:to-[#45A1E7] text-white dark:text-[#0F0F23] font-semibold rounded-xl hover:from-[#00589F] hover:to-[#45A1E7] dark:hover:from-[#45A1E7] dark:hover:to-[#B9A6DC] transition-all duration-300 font-montserrat"
               >
                 Try Again
               </button>

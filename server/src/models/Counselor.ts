@@ -108,7 +108,7 @@ const counselorSchema = new Schema<ICounselor>({
 })
 
 // Indexes for better performance
-counselorSchema.index({ userId: 1 })
+// userId index is automatically created by unique: true constraint
 counselorSchema.index({ specialization: 1 })
 counselorSchema.index({ isAvailable: 1 })
 counselorSchema.index({ rating: -1 })
