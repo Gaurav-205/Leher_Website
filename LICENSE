@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 LEHER Platform Team
+Copyright (c) 2025 Leher - Mental Wellness Platform
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,23 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-## SIH 2025 Acknowledgment
-
-This project is developed for Smart India Hackathon 2025 under Problem Statement ID: 25092.
-
-## Mental Health Disclaimer
-
-LEHER is a digital mental health support platform designed to provide information and support. It is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of qualified health providers with questions about mental health conditions.
-
-## Data Privacy
-
-LEHER is committed to protecting user privacy and follows applicable data protection regulations. All user data is handled with the highest level of security and confidentiality.
-
-## Contact
-
-For questions about this license or the LEHER platform, please contact:
-- Email: legal@leher.app
-- GitHub: https://github.com/yourusername/leher-platform
