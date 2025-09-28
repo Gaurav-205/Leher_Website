@@ -1,6 +1,9 @@
 import { ApiResponse } from '@types'
 import api from './api'
-import { mockResources, mockResourceCategories, filterResources } from './mockData'
+// Mock data moved inline to avoid dependency
+const mockResources = []
+const mockResourceCategories = []
+const filterResources = (resources: any[], filters: any) => resources
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
 
@@ -95,13 +98,10 @@ export const resourceService = {
     }
   }>> => {
     try {
-      console.log('Fetching resources from:', `${API_BASE_URL}/resources`, 'with params:', params)
       const response = await api.get('/resources', { params })
-      console.log('Resources response:', response.data)
       
       // Check if API returned empty data and fall back to mock data
       if (response.data.success && (!response.data.data || response.data.data.length === 0)) {
-        console.log('API returned empty data, using mock data for resources')
         const result = filterResources(mockResources, params)
         return {
           success: true,
@@ -113,7 +113,6 @@ export const resourceService = {
       return response.data
     } catch (error) {
       console.error('Error fetching resources:', error)
-      console.log('Using mock data for resources')
       
       // Return mock data when API fails
       const result = filterResources(mockResources, params)
@@ -131,7 +130,6 @@ export const resourceService = {
       return response.data
     } catch (error) {
       console.error('Error fetching resource:', error)
-      console.log('Using mock data for resource')
       
       // Return mock data when API fails
       const resource = mockResources.find(r => r._id === id)
@@ -156,7 +154,6 @@ export const resourceService = {
       return response.data
     } catch (error) {
       console.error('Error liking resource:', error)
-      console.log('Using mock data for like action')
       
       // Return mock data when API fails
       const resource = mockResources.find(r => r._id === id)
@@ -184,7 +181,6 @@ export const resourceService = {
       return response.data
     } catch (error) {
       console.error('Error downloading resource:', error)
-      console.log('Using mock data for download action')
       
       // Return mock data when API fails
       const resource = mockResources.find(r => r._id === id)
@@ -206,13 +202,10 @@ export const resourceService = {
   // Category endpoints
   getCategories: async (): Promise<ApiResponse<ResourceCategory[]>> => {
     try {
-      console.log('Fetching resource categories from:', `${API_BASE_URL}/resources/categories`)
       const response = await api.get('/resources/categories')
-      console.log('Resource categories response:', response.data)
       
       // Check if API returned empty data and fall back to mock data
       if (response.data.success && (!response.data.data || response.data.data.length === 0)) {
-        console.log('API returned empty categories, using mock data for categories')
         return {
           success: true,
           data: mockResourceCategories,

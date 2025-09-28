@@ -3,9 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@store/authStore'
 import SEOHead from '@components/seo/SEOHead'
 import HeroSection from '@components/sections/HeroSection'
-import CompanySlider from '@components/sections/CompanySlider'
-import ConnectedFeaturesSection from '@components/sections/ConnectedFeaturesSection'
-import TestimonialsSection from '@components/sections/TestimonialsSection'
 import Footer from '@components/sections/Footer'
 
 const LoadingSpinner = ({ message }: { message: string }) => (
@@ -34,9 +31,6 @@ const LandingPage = () => {
     <div className="min-h-screen">
       <SEOHead />
       <HeroSection />
-      <CompanySlider />
-      <ConnectedFeaturesSection />
-      <TestimonialsSection />
       <Footer />
     </div>
   )

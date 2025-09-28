@@ -137,7 +137,7 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-[80] lg:hidden"
             onClick={onClose}
           />
 
@@ -147,7 +147,7 @@ const ChatSidebar = ({ isOpen, onClose, onSessionSelect, activeSessionId }: Chat
             animate={{ x: 0 }}
             exit={{ x: -320 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed left-0 top-0 h-full w-80 bg-white border-r border-gray-200 z-50 flex flex-col shadow-lg lg:relative lg:translate-x-0 lg:shadow-none"
+            className="fixed left-0 top-0 h-full w-80 bg-white border-r border-gray-200 z-[90] flex flex-col shadow-lg lg:relative lg:translate-x-0 lg:shadow-none"
           >
             {/* Header */}
             <div className="flex items-center p-6 border-b border-gray-200">

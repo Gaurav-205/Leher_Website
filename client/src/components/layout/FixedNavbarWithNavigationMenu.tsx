@@ -37,6 +37,9 @@ const FixedNavbar = () => {
       setIsScrolled(scrollTop > 50)
     }
 
+    // Check initial scroll position
+    handleScroll()
+    
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -94,10 +97,10 @@ const FixedNavbar = () => {
   }
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
       isScrolled
-        ? 'bg-white/95 dark:bg-[#0F0F23]/95 backdrop-blur-xl border-b border-[#A8CFF1]/20 dark:border-[#A8CFF1]/30 shadow-lg'
-        : 'bg-white/10 dark:bg-[#0F0F23]/10 backdrop-blur-sm border-b border-transparent shadow-none'
+        ? 'bg-white dark:bg-[#0F0F23] border-b border-[#A8CFF1]/20 dark:border-[#A8CFF1]/30 shadow-lg'
+        : 'bg-white dark:bg-[#0F0F23] border-b border-transparent shadow-none'
     }`}>
       <div className="mx-auto max-w-7xl px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="flex h-14 sm:h-16 justify-between items-center">
@@ -121,7 +124,7 @@ const FixedNavbar = () => {
                 <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <span className={`ml-2 sm:ml-3 text-lg sm:text-xl font-bold transition-colors duration-200 group-hover:text-[#00589F] dark:group-hover:text-[#45A1E7] font-poppins ${
-                isScrolled ? 'text-[#2A3E66] dark:text-[#A8CFF1]' : 'text-[#2A3E66] dark:text-[#A8CFF1] drop-shadow-lg'
+                isScrolled ? 'text-[#2A3E66] dark:text-[#A8CFF1]' : 'text-[#2A3E66] dark:text-[#A8CFF1]'
               }`}>
                 Leher
               </span>
@@ -153,7 +156,7 @@ const FixedNavbar = () => {
                    </div>
                    <div className="hidden md:block text-left">
                      <div className={`text-sm font-medium transition-colors duration-200 font-montserrat ${
-                       isScrolled ? 'text-[#2A3E66] dark:text-[#A8CFF1]' : 'text-[#2A3E66] dark:text-[#A8CFF1] drop-shadow-lg'
+                       isScrolled ? 'text-[#2A3E66] dark:text-[#A8CFF1]' : 'text-[#2A3E66] dark:text-[#A8CFF1]'
                      }`}>
                        {user?.firstName} {user?.lastName}
                      </div>
@@ -212,7 +215,7 @@ const FixedNavbar = () => {
                  <Link
                    to="/auth/login"
                    className={`hover:text-[#00589F] dark:hover:text-[#45A1E7] font-medium text-xs sm:text-sm transition-colors duration-200 font-montserrat px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:bg-[#A8CFF1]/10 dark:hover:bg-[#1A1A2E]/30 ${
-                     isScrolled ? 'text-[#2A3E66] dark:text-[#A8CFF1]' : 'text-[#2A3E66] dark:text-[#A8CFF1] drop-shadow-lg'
+                     isScrolled ? 'text-[#2A3E66] dark:text-[#A8CFF1]' : 'text-[#2A3E66] dark:text-[#A8CFF1]'
                    }`}
                  >
                    Sign In

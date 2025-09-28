@@ -92,13 +92,50 @@
     font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   
-  /* Smooth scrolling - merged with zoom reduction */
+  /* Smooth scrolling and consistent sizing */
   html {
     scroll-behavior: smooth;
-    transform: scale(0.8);
-    transform-origin: top left;
-    width: 125%; /* Compensate for the scale reduction */
-    height: 125%;
+    /* Prevent layout shifts */
+    overflow-x: hidden;
+  }
+  
+  /* Ensure consistent viewport sizing */
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    /* Prevent horizontal scroll */
+    overflow-x: hidden;
+  }
+  
+  /* Consistent container sizing */
+  .container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  @media (min-width: 640px) {
+    .container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
   }
   
   /* Better focus styles */
@@ -124,5 +161,99 @@
   /* Card hover effects */
   .card-hover {
     @apply transition-all duration-300 hover:shadow-lg hover:scale-[1.02];
+  }
+  
+  /* Prevent layout shifts */
+  .prevent-layout-shift {
+    contain: layout style;
+  }
+  
+  /* Consistent image sizing */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  /* Consistent button sizing */
+  button {
+    box-sizing: border-box;
+  }
+  
+  /* Consistent input sizing */
+  input, textarea, select {
+    box-sizing: border-box;
+  }
+  
+  /* Prevent text overflow */
+  .text-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Consistent grid behavior */
+  .grid {
+    display: grid;
+    gap: 1rem;
+  }
+  
+  /* Consistent flex behavior */
+  .flex {
+    display: flex;
+  }
+  
+  /* Consistent spacing */
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-x-4 > * + * {
+    margin-left: 1rem;
+  }
+  
+  /* Navbar z-index hierarchy */
+  .navbar {
+    z-index: 100;
+  }
+  
+  /* Glass morphism effect for navbar */
+  .navbar-glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  }
+  
+  .navbar-glass.dark {
+    background: rgba(15, 15, 35, 0.15);
+    border: 1px solid rgba(168, 207, 241, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+  
+  .navbar-overlay {
+    z-index: 90;
+  }
+  
+  .navbar-backdrop {
+    z-index: 80;
+  }
+  
+  .navbar-toggle {
+    z-index: 95;
+  }
+  
+  /* Ensure proper stacking context */
+  .fixed {
+    position: fixed;
+  }
+  
+  .relative {
+    position: relative;
+  }
+  
+  .absolute {
+    position: absolute;
   }
 }

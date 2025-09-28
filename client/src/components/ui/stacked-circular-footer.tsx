@@ -1,13 +1,12 @@
-import { Icons } from "@/components/ui/icons"
+// Icons removed - using direct imports
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Facebook, Instagram, Linkedin, Twitter, Heart } from "lucide-react"
 import { Link } from "react-router-dom"
-import { useI18n } from '@services/i18n'
+// i18n service removed - using static text
 
 function StackedCircularFooter() {
-  const { t } = useI18n()
   const currentYear = new Date().getFullYear()
 
   return (
@@ -40,31 +39,31 @@ function StackedCircularFooter() {
               to="/" 
               className="text-[#A8CFF1] dark:text-[#B8B8B8] hover:text-white dark:hover:text-[#A8CFF1] text-base font-medium transition-colors duration-300 hover:scale-105 font-montserrat"
             >
-              {t('nav.home')}
+              Home
             </Link>
             <Link 
               to="/about" 
               className="text-[#A8CFF1] dark:text-[#B8B8B8] hover:text-white dark:hover:text-[#A8CFF1] text-base font-medium transition-colors duration-300 hover:scale-105 font-montserrat"
             >
-              {t('nav.about')}
+              About
             </Link>
             <Link 
               to="/app/chatbot" 
               className="text-[#A8CFF1] dark:text-[#B8B8B8] hover:text-white dark:hover:text-[#A8CFF1] text-base font-medium transition-colors duration-300 hover:scale-105 font-montserrat"
             >
-              {t('nav.chatbot')}
+              Chatbot
             </Link>
             <Link 
               to="/app/community" 
               className="text-[#A8CFF1] dark:text-[#B8B8B8] hover:text-white dark:hover:text-[#A8CFF1] text-base font-medium transition-colors duration-300 hover:scale-105 font-montserrat"
             >
-              {t('nav.community')}
+              Community
             </Link>
             <Link 
               to="/app/resources" 
               className="text-[#A8CFF1] dark:text-[#B8B8B8] hover:text-white dark:hover:text-[#A8CFF1] text-base font-medium transition-colors duration-300 hover:scale-105 font-montserrat"
             >
-              {t('nav.resources')}
+              Resources
             </Link>
           </nav>
 
@@ -138,7 +137,7 @@ function StackedCircularFooter() {
           {/* Copyright */}
           <div className="text-center">
             <p className="text-sm text-[#B9A6DC] dark:text-[#B8B8B8] font-montserrat">
-              © {currentYear} Leher. {t('footer.copyright')}
+              © {currentYear} Leher. All rights reserved.
             </p>
           </div>
         </div>

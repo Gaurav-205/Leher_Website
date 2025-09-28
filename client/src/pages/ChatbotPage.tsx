@@ -33,7 +33,7 @@ const ChatbotPage: React.FC = () => {
         {/* Mobile Sidebar Toggle Button */}
         <button
           onClick={() => setSidebarOpen(true)}
-          className="lg:hidden fixed top-4 left-4 z-30 p-3 bg-white/90 dark:bg-[#1A1A2E]/90 backdrop-blur-sm border border-[#A8CFF1]/20 dark:border-[#A8CFF1]/10 rounded-xl shadow-lg hover:bg-white dark:hover:bg-[#1A1A2E] hover:shadow-xl transition-all duration-300"
+          className="lg:hidden fixed top-20 left-4 z-[95] p-3 bg-white/90 dark:bg-[#1A1A2E]/90 backdrop-blur-sm border border-[#A8CFF1]/20 dark:border-[#A8CFF1]/10 rounded-xl shadow-lg hover:bg-white dark:hover:bg-[#1A1A2E] hover:shadow-xl transition-all duration-300"
           title="Open chat sidebar"
         >
           <Menu className="h-5 w-5 text-[#2A3E66] dark:text-[#A8CFF1]" />

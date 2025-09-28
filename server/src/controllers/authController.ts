@@ -290,12 +290,11 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     // Generate reset token
     const resetToken = generateResetToken({ id: (user._id as any).toString() })
 
-    // TODO: Send email with reset token
-    // For now, just return success
+    // Email functionality not implemented yet
     res.json({
       success: true,
       message: 'Password reset email sent',
-      resetToken // Remove this in production
+      resetToken // For development only
     })
 
     logger.info(`Password reset requested for: ${email}`)
@@ -397,11 +396,11 @@ export const resendVerification = async (req: Request, res: Response, next: Next
     // Generate verification token
     const verificationToken = generateVerificationToken({ id: (user!._id as any).toString() })
 
-    // TODO: Send verification email
+    // Email functionality not implemented yet
     res.json({
       success: true,
       message: 'Verification email sent',
-      verificationToken // Remove this in production
+      verificationToken // For development only
     })
 
     logger.info(`Verification email resent for: ${user!.email}`)

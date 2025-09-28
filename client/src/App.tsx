@@ -46,7 +46,7 @@ import ProtectedRoute from '@components/auth/ProtectedRoute'
 import AdminRoute from '@components/auth/AdminRoute'
 
 function App() {
-  const { checkAuthStatus, isAuthenticated, user, token } = useAuthStore()
+  const { checkAuthStatus, isAuthenticated, user } = useAuthStore()
 
   useEffect(() => {
     checkAuthStatus()
@@ -63,8 +63,8 @@ function App() {
             {/* Fixed Navbar for all pages */}
             <FixedNavbar />
       
-      {/* Main content with top padding to account for fixed navbar */}
-      <div className="pt-16">
+      {/* Main content - no padding to allow navbar overlap */}
+      <div>
         <Routes>
           {/* Root route - shows landing page for non-authenticated users, redirects to /app for authenticated users */}
           <Route path="/" element={<LandingPage />} />
