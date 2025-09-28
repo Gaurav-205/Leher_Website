@@ -99,8 +99,8 @@ const FixedNavbar = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
       isScrolled
-        ? 'bg-white dark:bg-[#0F0F23] border-b border-[#A8CFF1]/20 dark:border-[#A8CFF1]/30 shadow-lg'
-        : 'bg-white dark:bg-[#0F0F23] border-b border-transparent shadow-none'
+        ? 'bg-white/95 dark:bg-[#0F0F23]/95 backdrop-blur-md border-b border-[#A8CFF1]/20 dark:border-[#A8CFF1]/30 shadow-lg'
+        : 'bg-white/90 dark:bg-[#0F0F23]/90 backdrop-blur-sm border-b border-transparent shadow-none'
     }`}>
       <div className="mx-auto max-w-7xl px-3 sm:px-4 md:px-6 lg:px-8">
         <div className="flex h-14 sm:h-16 justify-between items-center">

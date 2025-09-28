@@ -55,10 +55,10 @@ const HeroSection = () => {
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-12 flex flex-col justify-center h-full">
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 md:px-8 lg:px-12 flex flex-col justify-center h-full text-center">
         {/* Enhanced Badge */}
         <motion.div 
-          className="inline-flex items-center px-4 py-2 rounded-full bg-white/90 dark:bg-[#1A1A2E]/70 border border-[#A8CFF1]/40 dark:border-[#A8CFF1]/30 text-[#2A3E66] dark:text-[#E8E8E8] text-sm font-medium mb-2 sm:mb-3 font-montserrat shadow-lg backdrop-blur-sm self-center"
+          className="inline-flex items-center px-4 py-2 rounded-full bg-white/90 dark:bg-[#1A1A2E]/70 border border-[#A8CFF1]/40 dark:border-[#A8CFF1]/30 text-[#2A3E66] dark:text-[#E8E8E8] text-sm font-medium mb-2 sm:mb-3 font-montserrat shadow-lg backdrop-blur-sm mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
@@ -117,7 +117,7 @@ const HeroSection = () => {
 
         {/* Enhanced CTA Buttons */}
         <motion.div 
-          className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-4 sm:mb-6 px-4 sm:px-0 self-center" 
+          className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-4 sm:mb-6 px-4 sm:px-0 mx-auto" 
           role="group" 
           aria-label="Call to action buttons"
           initial={{ opacity: 0, y: 20 }}
@@ -177,7 +177,7 @@ const HeroSection = () => {
 
         {/* Enhanced Trust Indicators */}
         <motion.div 
-          className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-3 sm:mb-4 px-4 sm:px-0 self-center"
+          className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-3 sm:mb-4 px-4 sm:px-0 mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.6 }}
@@ -227,7 +227,7 @@ const HeroSection = () => {
 
         {/* Additional Features */}
         <motion.div 
-          className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 px-4 sm:px-0 self-center"
+          className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 px-4 sm:px-0 mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.8 }}
