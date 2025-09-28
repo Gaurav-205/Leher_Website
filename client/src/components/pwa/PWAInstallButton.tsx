@@ -48,15 +48,7 @@ const PWAInstallButton = () => {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      {showUpdate ? (
-        <button
-          onClick={handleUpdate}
-          className="flex items-center space-x-2 px-4 py-3 bg-gradient-to-r from-[#2A3E66] to-[#00589F] text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-        >
-          <RefreshCw className="h-5 w-5" />
-          <span className="font-medium">Update Available</span>
-        </button>
-      ) : canInstall() ? (
+      {showUpdate ? null : canInstall() ? (
         <button
           onClick={handleInstall}
           disabled={isInstalling}
